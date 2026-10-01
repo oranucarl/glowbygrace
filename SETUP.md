@@ -38,8 +38,8 @@ Work through the steps in order. You'll collect these values along the way:
    - **Authorized redirect URI:** `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`
 4. Copy the **Client ID** and **Client secret** into Supabase → **Authentication → Sign In / Providers → Google** → enable → save.
 5. Supabase → **Authentication → URL Configuration**:
-   - **Site URL:** your live site, e.g. `https://oranucarl.github.io/glowbygrace`
-   - **Redirect URLs:** add `https://oranucarl.github.io/glowbygrace/**` and `http://localhost:8080/**`
+   - **Site URL:** `https://glowbygrace.vercel.app`
+   - **Redirect URLs:** add `https://glowbygrace.vercel.app/**` and `http://localhost:8080/**`
 6. Back in Google → OAuth consent screen → **Publish app** so anyone can sign in (in testing mode only listed test users can).
 
 ## 3. Paystack
@@ -69,7 +69,7 @@ supabase secrets set \
   RESEND_API_KEY=re_xxx \
   EMAIL_FROM="Glow by Grace <orders@yourdomain.com>" \
   SELLER_EMAIL=seller@gmail.com \
-  SITE_URL=https://oranucarl.github.io/glowbygrace \
+  SITE_URL=https://glowbygrace.vercel.app \
   ALLOWED_ORIGINS=http://localhost:8080
 
 supabase functions deploy checkout verify-payment paystack-webhook
@@ -79,11 +79,11 @@ supabase functions deploy checkout verify-payment paystack-webhook
 - `SITE_URL` is used for the links inside emails and as the fallback return address after payment.
 - `ALLOWED_ORIGINS` lists any other addresses (comma separated) you test the site from.
 
-## 6. Publish the site
+## 6. Hosting
 
-GitHub → repo **Settings → Pages** → *Deploy from a branch* → `main` / root.
-The site appears at `https://oranucarl.github.io/glowbygrace`. (Netlify or Vercel work too — make sure
-`SITE_URL` and the Supabase redirect URLs match the address you use.)
+The site is hosted on **Vercel** at <https://glowbygrace.vercel.app>, connected to the GitHub repo:
+every push to `main` deploys automatically (no build step — Framework preset *Other*).
+If you add a custom domain, update `SITE_URL` and the Supabase Site URL / Redirect URLs to match.
 
 ## 7. Test a full order
 
