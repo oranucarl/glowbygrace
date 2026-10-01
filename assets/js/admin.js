@@ -376,6 +376,7 @@
       <label class="field"><span>Name</span><input class="input" name="name" required value="${esc(z.name || "")}" placeholder="e.g. Within Lagos"></label>
       <label class="field"><span>Fee (₦)</span><input class="input" name="fee" type="number" min="0" step="1" required value="${z.fee ?? ""}" placeholder="0 = free"></label>
       <label class="field grow"><span>Description shown at checkout</span><input class="input" name="description" value="${esc(z.description || "")}" placeholder="e.g. Same-day or next-day delivery"></label>
+      <label class="field states"><span>States covered <i>(comma separated — leave empty for “all other states”)</i></span><input class="input" name="states" list="ng-states" value="${esc((z.states || []).join(", "))}" placeholder="All other states"></label>
       <label class="field"><span>Order</span><input class="input" name="sort" type="number" value="${z.sort ?? zones.length + 1}"></label>
       <label class="check"><input type="checkbox" name="active"${z.active === false ? "" : " checked"}> Available</label>
       <div class="zone-btns"><button class="btn btn-dark btn-sm">Save</button>${z.id ? `<button type="button" class="link err" data-delete-zone="${z.id}">Delete</button>` : ""}</div>
@@ -384,7 +385,8 @@
 
   function deliveryTab() {
     body().innerHTML = `
-      <p class="muted">These options and fees are shown to customers at checkout and charged through Paystack. Untick “Available” to hide an option without deleting it.</p>
+      <p class="muted">At checkout the customer's <b>state</b> picks the delivery option automatically: the option that lists their state applies, otherwise the one with no states listed (“all other states”). Customers see every option, with theirs marked “Applied”. Untick “Available” to hide an option without deleting it.</p>
+      <datalist id="ng-states">${window.GBG_STATES.map((s) => `<option value="${s}">`).join("")}</datalist>
       <div data-zones>${zones.map(zoneRow).join("")}</div>
       <button class="btn btn-ghost" data-add-zone>+ Add delivery option</button>`;
   }
@@ -394,7 +396,11 @@
     const fee = parseInt(el.fee.value, 10);
     if (!el.name.value.trim()) return toast("Please enter a name");
     if (!(fee >= 0)) return toast("Fee must be 0 or more");
-    const row = { name: el.name.value.trim(), fee, description: el.description.value.trim() || null, sort: parseInt(el.sort.value, 10) || 0, active: el.active.checked };
+    const states = [...new Set(el.states.value.split(",").map((s) => s.trim()).filter(Boolean))];
+    const unknown = states.filter((s) => !window.GBG_STATES.some((x) => x.toLowerCase() === s.toLowerCase()));
+    if (unknown.length) return toast(`Not a state on the checkout list: ${unknown.join(", ")}. Use names like “Lagos”, “FCT (Abuja)”.`);
+    const fixed = states.map((s) => window.GBG_STATES.find((x) => x.toLowerCase() === s.toLowerCase()));
+    const row = { name: el.name.value.trim(), fee, description: el.description.value.trim() || null, states: fixed, sort: parseInt(el.sort.value, 10) || 0, active: el.active.checked };
     const id = form.dataset.zone;
     fail((id ? await db.from("delivery_zones").update(row).eq("id", id) : await db.from("delivery_zones").insert(row)).error);
     toast("Delivery option saved ✦");

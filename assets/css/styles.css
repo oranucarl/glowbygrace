@@ -1094,9 +1094,15 @@ h2.sub span { background: var(--cream-2); border-radius: 999px; padding: 2px 9px
 .co-who b { font-size: .9rem; word-break: break-all; }
 .co-who .link { margin-left: auto; }
 .zones { display: grid; gap: 10px; margin-bottom: 20px; }
-.zone { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; border: 1.5px solid rgba(107,70,54,.18); cursor: pointer; transition: border-color .2s, background .2s; }
-.zone:has(input:checked) { border-color: var(--espresso); background: var(--cream); }
-.zone input { width: 18px; height: 18px; accent-color: var(--espresso); }
+.zone { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; border: 1.5px solid rgba(107,70,54,.14); color: var(--muted); transition: border-color .25s, background .25s, color .25s, opacity .25s; }
+.zones:has(.applied) .zone:not(.applied) { opacity: .55; }
+.zone.applied { border-color: var(--espresso); background: var(--cream); color: var(--espresso); box-shadow: 0 8px 22px -16px rgba(42,26,20,.6); }
+.zone-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(107,70,54,.3); }
+.zone.applied .zone-dot { border-color: var(--espresso); background: radial-gradient(circle, var(--espresso) 45%, transparent 50%); }
+.zone b { color: inherit; }
+.zone-fee { display: flex; align-items: center; gap: 8px; }
+.zone-fee i { font-style: normal; font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; background: var(--espresso); color: var(--cream); padding: 4px 8px; border-radius: 999px; }
+.zones-hint { margin: 0 0 4px; }
 .zone small { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
 .zone em { font-style: normal; font-weight: 800; }
 .co-form .check { margin: 16px 0 6px; }
@@ -1212,6 +1218,7 @@ section.order-card .o-meta { margin-bottom: 22px; }
 .zone-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; padding: 16px; margin-bottom: 12px; }
 .zone-row .field { width: 140px; }
 .zone-row .field.grow { flex: 1; min-width: 220px; }
+.zone-row .field.states { flex: 1 1 100%; width: auto; }
 .zone-row .check { padding-bottom: 12px; }
 .zone-btns { display: flex; gap: 12px; align-items: center; padding-bottom: 4px; }
 .adm-list { padding: 6px 18px; margin-bottom: 16px; }

@@ -59,7 +59,7 @@
     if (zones.error) throw zones.error;
     const list = prods.data.map(mapProduct).filter((p) => p.lengths.length);
     window.GBG_PRODUCTS.splice(0, window.GBG_PRODUCTS.length, ...list);
-    window.GBG_ZONES.splice(0, window.GBG_ZONES.length, ...zones.data);
+    window.GBG_ZONES.splice(0, window.GBG_ZONES.length, ...zones.data.map((z) => ({ ...z, states: z.states || [] })));
   }
 
   const api = {

@@ -2,7 +2,8 @@
 // Prices, stock and delivery fees are always read from the database here —
 // nothing the browser sends about money is trusted.
 //
-// POST { items: [{product_id, length, color?, qty}], zone_id, customer: {...}, save_details, return_url }
+// POST { items: [{product_id, length, color?, qty}], customer: {...}, save_details, return_url }
+//   (the delivery zone is worked out from customer.state — see zoneForState)
 //   -> { order_id, order_number, authorization_url }
 // POST { order_id, return_url }   (retry payment for an unpaid order)
 //   -> { order_id, order_number, authorization_url }
@@ -56,6 +57,17 @@ async function priceLines(lines: Line[]) {
       image_url: v.products.model_url,
     };
   });
+}
+
+// The zone that lists this state wins; otherwise the zone with no states listed ("everywhere else").
+async function zoneForState(state: string) {
+  const { data: zones, error } = await db.from("delivery_zones").select("id, name, fee, states, sort").eq("active", true).order("sort");
+  if (error) throw error;
+  const norm = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, "").trim();
+  const target = norm(state);
+  return (zones || []).find((z) => (z.states || []).some((s: string) => norm(s) === target))
+    || (zones || []).find((z) => !(z.states || []).length)
+    || null;
 }
 
 Deno.serve(handle(async (req) => {
@@ -113,8 +125,8 @@ Deno.serve(handle(async (req) => {
     }
   }
 
-  const { data: zone } = await db.from("delivery_zones").select("id, name, fee").eq("id", body.zone_id).eq("active", true).maybeSingle();
-  if (!zone) throw new HttpError(400, "Please choose a delivery option.");
+  const zone = await zoneForState(customer.state);
+  if (!zone) throw new HttpError(400, `Sorry, we don't deliver to ${customer.state} yet. Please contact us on WhatsApp.`);
 
   const subtotal = items.reduce((s, i) => s + i.line_total, 0);
   const { data: order, error } = await db

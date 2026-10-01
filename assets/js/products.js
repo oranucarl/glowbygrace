@@ -21,6 +21,9 @@ window.GBG_CATEGORIES = [
   { key: "closure", label: "Closures" }
 ];
 
+/* Nigerian states (used at checkout and to match delivery zones) */
+window.GBG_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT (Abuja)", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
+
 /* Store settings — edit WhatsApp number here (international format, no +) */
 window.GBG_STORE = {
   name: "Glow by Grace",

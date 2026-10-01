@@ -4,11 +4,36 @@
   const API = window.GBG_API;
   const root = document.querySelector("[data-checkout]");
 
-  const STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT (Abuja)", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
+  const STATES = window.GBG_STATES;
 
   let user = null;
   let profile = null;
   let zoneId = null;
+
+  // Same rule as the server: the zone listing this state, else the zone with no states ("everywhere else").
+  const norm = (s) => String(s || "").toLowerCase().replace(/\(.*?\)/g, "").trim();
+  function zoneFor(state) {
+    if (!state) return null;
+    const zones = window.GBG_ZONES || [];
+    return zones.find((z) => (z.states || []).some((s) => norm(s) === norm(state))) || zones.find((z) => !(z.states || []).length) || null;
+  }
+
+  function zonesList(state) {
+    const zones = window.GBG_ZONES || [];
+    if (!zones.length) return `<p class="err">No delivery options are available right now. Please contact us on WhatsApp.</p>`;
+    const applied = zoneFor(state);
+    return `
+      ${!state ? `<p class="muted small zones-hint">Select your state above to see your delivery fee.</p>` : !applied ? `<p class="err">Sorry, we don't deliver to ${esc(state)} yet. Please contact us on WhatsApp.</p>` : ""}
+      ${zones.map((z) => {
+        const on = applied && z.id === applied.id;
+        return `
+        <div class="zone${on ? " applied" : ""}"${on ? ' aria-current="true"' : ""}>
+          <span class="zone-dot" aria-hidden="true"></span>
+          <span><b>${esc(z.name)}</b>${z.description ? `<small>${esc(z.description)}</small>` : ""}</span>
+          <span class="zone-fee">${on ? `<i>Applied</i>` : ""}<em>${z.fee ? naira(z.fee) : "Free"}</em></span>
+        </div>`;
+      }).join("")}`;
+  }
   let busy = false;
 
   function summary(lines) {
@@ -30,7 +55,7 @@
         </div>
         <div class="o-totals">
           <div><span>Subtotal</span><span>${naira(subtotal)}</span></div>
-          <div><span>Delivery${zone ? ` · ${esc(zone.name)}` : ""}</span><span>${fee === null ? "Choose an option" : fee ? naira(fee) : "Free"}</span></div>
+          <div><span>Delivery${zone ? ` · ${esc(zone.name)}` : ""}</span><span>${fee === null ? "Select your state" : fee ? naira(fee) : "Free"}</span></div>
           <div class="grand"><span>Total</span><span>${naira(subtotal + (fee || 0))}</span></div>
         </div>
         <p class="co-secure">🔒 Payments are processed securely by Paystack. We never see or store your card details.</p>
@@ -44,7 +69,7 @@
   function form() {
     const p = profile || {};
     const zones = window.GBG_ZONES || [];
-    if (!zoneId) zoneId = (zones.find((z) => z.id === p.delivery_zone_id) || {}).id || null;
+    zoneId = (zoneFor(p.state) || {}).id || null;
     const val = (k, fallback = "") => esc(p[k] || fallback);
     return `
       <form class="card co-form" data-form novalidate>
@@ -72,15 +97,8 @@
           </label>
         </div>
 
-        <h3>Delivery option</h3>
-        <div class="zones">
-          ${zones.length ? zones.map((z) => `
-            <label class="zone">
-              <input type="radio" name="zone" value="${z.id}"${z.id === zoneId ? " checked" : ""}>
-              <span><b>${esc(z.name)}</b>${z.description ? `<small>${esc(z.description)}</small>` : ""}</span>
-              <em>${z.fee ? naira(z.fee) : "Free"}</em>
-            </label>`).join("") : `<p class="err">No delivery options are available right now. Please contact us on WhatsApp.</p>`}
-        </div>
+        <h3>Delivery</h3>
+        <div class="zones" data-zones>${zonesList(p.state)}</div>
 
         <label class="field wide"><span>Order note <i>(optional)</i></span><textarea name="notes" rows="3" maxlength="500" placeholder="Anything we should know about your order or delivery?"></textarea></label>
         <label class="check"><input type="checkbox" name="save" checked> Save these details for next time</label>
@@ -137,7 +155,7 @@
       .filter(([k]) => !get(k));
     if (missing.length) return showError(`Please enter ${missing.map((m) => m[1]).join(", ")}.`);
     if (!/^[+\d][\d\s-]{6,}$/.test(get("phone"))) return showError("Please enter a valid phone number.");
-    if (!zoneId) return showError("Please choose a delivery option.");
+    if (!zoneId) return showError(get("state") ? `Sorry, we don't deliver to ${get("state")} yet. Please contact us on WhatsApp.` : "Please select your state.");
     const lines = bagLines();
     if (lines.some((l) => !inStock(l.v) || (l.v.stock != null && l.qty > l.v.stock) || (l.p.colors.length && !l.p.colors.includes(l.color)))) {
       return showError("Some items in your bag are sold out or low in stock. Please update your bag.");
@@ -149,7 +167,6 @@
     try {
       const res = await API.fn("checkout", {
         items: lines.map((l) => ({ product_id: l.id, length: l.len, color: l.color, qty: l.qty })),
-        zone_id: zoneId,
         customer: { name: get("name"), phone: get("phone"), address: get("address"), city: get("city"), state: get("state"), notes: get("notes") },
         save_details: f.get("save") === "on",
         return_url: new URL("order.html", location.href).href
@@ -172,8 +189,9 @@
     }
   });
   root.addEventListener("change", (e) => {
-    if (e.target.name === "zone") {
-      zoneId = e.target.value;
+    if (e.target.name === "state") {
+      zoneId = (zoneFor(e.target.value) || {}).id || null;
+      root.querySelector("[data-zones]").innerHTML = zonesList(e.target.value);
       showError("");
       const aside = root.querySelector(".co-summary");
       if (aside) aside.outerHTML = summary(bagLines());

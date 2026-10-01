@@ -57,8 +57,8 @@
   }
 
   function detailsView(p) {
-    const zones = window.GBG_ZONES || [];
     const v = (k) => esc((p && p[k]) || "");
+    const st = p && p.state;
     return `
       <form class="card co-form" data-profile>
         <p class="muted">These details are filled in for you at checkout.</p>
@@ -67,9 +67,12 @@
           <label class="field"><span>Phone number</span><input name="phone" type="tel" value="${v("phone")}" autocomplete="tel"></label>
           <label class="field wide"><span>Street address</span><input name="address" value="${v("address")}" autocomplete="street-address"></label>
           <label class="field"><span>City / area</span><input name="city" value="${v("city")}" autocomplete="address-level2"></label>
-          <label class="field"><span>State</span><input name="state" value="${v("state")}" autocomplete="address-level1"></label>
-          <label class="field"><span>Usual delivery option</span>
-            <select name="delivery_zone_id"><option value="">—</option>${zones.map((z) => `<option value="${z.id}"${p && p.delivery_zone_id === z.id ? " selected" : ""}>${esc(z.name)}</option>`).join("")}</select>
+          <label class="field"><span>State</span>
+            <select name="state" autocomplete="address-level1">
+              <option value="">Select state</option>
+              ${window.GBG_STATES.map((s) => `<option${s === st ? " selected" : ""}>${s}</option>`).join("")}
+              ${st && !window.GBG_STATES.includes(st) ? `<option selected>${esc(st)}</option>` : ""}
+            </select>
           </label>
           <label class="field"><span>Email</span><input value="${esc(user.email)}" disabled></label>
         </div>
