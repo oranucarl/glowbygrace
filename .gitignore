@@ -18,3 +18,5 @@ supabase/.temp/
 supabase/.branches/
 .env
 .env.*
+.vercel
+.env*
