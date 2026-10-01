@@ -128,6 +128,7 @@
   shell.innerHTML = `
     <div class="overlay" data-overlay></div>
     <div class="modal" role="dialog" aria-modal="true" aria-label="Product details" data-modal></div>
+    <div class="config" role="dialog" aria-modal="true" aria-label="Choose your options" tabindex="-1" data-config></div>
     <aside class="drawer" aria-label="Your bag" data-drawer>
       <div class="drawer-head"><h3>Your bag</h3><button class="close-x" data-close aria-label="Close bag">${ICON.close}</button></div>
       <div class="drawer-items" data-bag-items></div>
@@ -138,6 +139,7 @@
 
   const overlay = document.querySelector("[data-overlay]");
   const modal = document.querySelector("[data-modal]");
+  const config = document.querySelector("[data-config]");
   const drawer = document.querySelector("[data-drawer]");
   const toastEl = document.querySelector("[data-toast]");
 
@@ -152,6 +154,7 @@
   function closeAll() {
     overlay.classList.remove("open");
     modal.classList.remove("open");
+    config.classList.remove("open");
     drawer.classList.remove("open");
     document.body.style.overflow = "";
   }
@@ -169,19 +172,29 @@
   try { bag = JSON.parse(localStorage.getItem(BAG_KEY)) || []; } catch (e) { bag = []; }
   const saveBag = () => { try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {} };
 
-  function addToBag(id, len) {
+  // how many of one length are already in the bag (across colours) — stock is per length
+  const inBagQty = (id, len) => bag.filter((l) => l.id === id && l.len === len).reduce((s, l) => s + l.qty, 0);
+  const optionLabel = (len, color) => [len, color].filter(Boolean).join(", ");
+
+  // Adds a fully-chosen item. Without a length (or a required colour) it opens the options picker instead.
+  function addToBag(id, len, color = null, qty = 1) {
     const p = byId(id);
-    if (!p) return;
-    const variant = len ? p.lengths.find((l) => l.len === len) : p.lengths.find(inStock);
-    if (!variant || !inStock(variant)) { toast(`${p.name}${len ? ` (${len})` : ""} is sold out`); return; }
-    const length = variant.len;
-    const line = bag.find((l) => l.id === id && l.len === length);
-    if (line && variant.stock != null && line.qty >= variant.stock) { toast(`Only ${variant.stock} of this length left`); return; }
-    if (line) line.qty += 1;
-    else bag.push({ id, len: length, qty: 1 });
+    if (!p) return false;
+    if (!len || (p.colors.length && !p.colors.includes(color))) { openConfig(id, { len, color }); return false; }
+    if (!p.colors.length) color = null;
+    const variant = p.lengths.find((l) => l.len === len);
+    if (!variant || !inStock(variant)) { toast(`${p.name} (${len}) is sold out`); return false; }
+    if (variant.stock != null && inBagQty(id, len) + qty > variant.stock) {
+      toast(`Only ${variant.stock} of ${p.name} (${len}) available`);
+      return false;
+    }
+    const line = bag.find((l) => l.id === id && l.len === len && (l.color || null) === color);
+    if (line) line.qty += qty;
+    else bag.push({ id, len, color, qty });
     saveBag();
     renderBag();
-    toast(`${p.name} (${length}) added to your bag ✦`);
+    toast(`${p.name} (${optionLabel(len, color)}) added to your bag ✦`);
+    return true;
   }
 
   function bagLines() {
@@ -191,7 +204,7 @@
         if (!p) return null;
         const v = p.lengths.find((x) => x.len === l.len);
         if (!v) return null;
-        return { ...l, p, v, price: v.price };
+        return { ...l, color: l.color || null, p, v, price: v.price };
       })
       .filter(Boolean);
   }
@@ -217,7 +230,7 @@
         <img src="${l.p.model}" alt="${l.p.name}">
         <div>
           <h4>${l.p.name}</h4>
-          <small>${l.len} · ${naira(l.price)}</small><br>
+          <small>${esc(optionLabel(l.len, l.color))} · ${naira(l.price)}</small><br>
           <span class="qty"><button data-dec="${i}" aria-label="Decrease">−</button>${l.qty}<button data-inc="${i}" aria-label="Increase">+</button></span>
         </div>
         <button class="remove" data-rm="${i}">Remove</button>
@@ -240,7 +253,7 @@
   }
 
   function orderMessage(lines, total) {
-    const rows = lines.map((l) => `• ${l.p.name} — ${l.len} x${l.qty} (${naira(l.price * l.qty)})`).join("\n");
+    const rows = lines.map((l) => `• ${l.p.name} — ${optionLabel(l.len, l.color)} x${l.qty} (${naira(l.price * l.qty)})`).join("\n");
     return `Hi Glow by Grace! I'd like to order:\n${rows}\n\nSubtotal: ${naira(total)}\nPlease confirm availability and delivery. Thank you!`;
   }
 
@@ -252,9 +265,9 @@
     const idx = inc ?? dec ?? rm;
     if (idx === undefined) return;
     const target = lines[idx];
-    const real = bag.find((l) => l.id === target.id && l.len === target.len);
+    const real = bag.find((l) => l.id === target.id && l.len === target.len && (l.color || null) === target.color);
     if (inc !== undefined) {
-      if (target.v.stock != null && real.qty >= target.v.stock) return toast(`Only ${target.v.stock} of this length left`);
+      if (target.v.stock != null && inBagQty(target.id, target.len) >= target.v.stock) return toast(`Only ${target.v.stock} of this length available`);
       real.qty++;
     }
     if (dec !== undefined) real.qty = Math.max(0, real.qty - 1);
@@ -290,9 +303,8 @@
         <div class="product-info">
           <div class="meta">${p.tagline}</div>
           <h3>${p.name}</h3>
-          <div class="price" data-card-price><small>from</small>${naira(minPrice(p))}</div>
-          <div class="lengths" role="group" aria-label="Choose a length">${p.lengths.map((l, i) =>
-            `<button type="button" data-pick="${i}" aria-pressed="false"${inStock(l) ? "" : ' class="out" disabled title="Sold out"'}>${l.len}</button>`).join("")}</div>
+          <div class="price"><small>from</small>${naira(minPrice(p))}</div>
+          <div class="lengths">${p.lengths.map((l) => `<span${inStock(l) ? "" : ' class="out" title="Sold out"'}>${l.len}</span>`).join("")}${p.colors.length ? `<span class="colors">${p.colors.length} colour${p.colors.length > 1 ? "s" : ""}</span>` : ""}</div>
         </div>
       </article>`;
   }
@@ -301,8 +313,8 @@
   function openQuick(id) {
     const p = byId(id);
     if (!p) return;
-    const cardLen = (document.querySelector(`.product-card[data-id="${CSS.escape(id)}"]`) || {}).dataset;
-    let sel = (cardLen && cardLen.len && p.lengths.find((l) => l.len === cardLen.len)) || p.lengths.find(inStock) || p.lengths[0];
+    let sel = p.lengths.find(inStock) || p.lengths[0];
+    let color = p.colors.length === 1 ? p.colors[0] : null;
     modal.innerHTML = `
       <button class="close-x" data-close aria-label="Close">${ICON.close}</button>
       <div class="modal-media">
@@ -325,6 +337,8 @@
         <div class="len-options">${p.lengths
           .map((l, i) => `<button class="${l === sel ? "active" : ""}" data-len="${i}"${inStock(l) ? "" : ' disabled title="Sold out"'}>${l.len}${inStock(l) ? "" : " · sold out"}</button>`)
           .join("")}</div>
+        ${p.colors.length ? `<div class="len-label">Colour</div>
+        <div class="len-options">${p.colors.map((c) => `<button class="${c === color ? "active" : ""}" data-color="${esc(c)}">${esc(c)}</button>`).join("")}</div>` : ""}
         <div class="btns">
           <button class="btn btn-dark" data-modal-add${inStock(sel) ? "" : " disabled"}>${inStock(sel) ? `Add to bag ${ICON.bag}` : "Sold out"}</button>
           <a class="btn btn-wa" data-modal-wa target="_blank" rel="noopener" href="#">${ICON.wa} Order on WhatsApp</a>
@@ -332,7 +346,7 @@
       </div>`;
     const waBtn = modal.querySelector("[data-modal-wa]");
     const setWa = () =>
-      (waBtn.href = waLink(`Hi Glow by Grace! I'm interested in the ${p.name} (${sel.len}) — ${naira(sel.price)}. Is it available?`));
+      (waBtn.href = waLink(`Hi Glow by Grace! I'm interested in the ${p.name} (${optionLabel(sel.len, color)}) — ${naira(sel.price)}. Is it available?`));
     setWa();
     modal.querySelector("[data-close]").onclick = closeAll;
     modal.querySelectorAll("[data-img]").forEach((b) =>
@@ -349,40 +363,105 @@
         setWa();
       })
     );
-    modal.querySelector("[data-modal-add]").onclick = () => { addToBag(p.id, sel.len); closeAll(); };
+    modal.querySelectorAll("[data-color]").forEach((b) =>
+      b.addEventListener("click", () => {
+        color = b.dataset.color;
+        modal.querySelectorAll("[data-color]").forEach((x) => x.classList.toggle("active", x === b));
+        setWa();
+      })
+    );
+    modal.querySelector("[data-modal-add]").onclick = () => {
+      if (p.colors.length && !color) return toast("Please choose a colour");
+      if (addToBag(p.id, sel.len, color)) closeAll();
+    };
     overlay.classList.add("open");
     modal.classList.add("open");
     document.body.style.overflow = "hidden";
   }
 
+  /* ---------- Options picker (opens from "Add to bag") ---------- */
+  function openConfig(id, preset = {}) {
+    const p = byId(id);
+    if (!p) return;
+    const avail = p.lengths.filter(inStock);
+    let len = preset.len && avail.some((l) => l.len === preset.len) ? preset.len : avail.length === 1 ? avail[0].len : null;
+    let color = preset.color && p.colors.includes(preset.color) ? preset.color : p.colors.length === 1 ? p.colors[0] : null;
+    let qty = 1;
+
+    function draw() {
+      const v = p.lengths.find((l) => l.len === len);
+      const left = v && v.stock != null ? Math.max(0, v.stock - inBagQty(p.id, len)) : 10;
+      qty = Math.min(Math.max(1, qty), Math.max(1, left));
+      const needColor = p.colors.length && !color;
+      const ready = v && !needColor && left > 0;
+      const label = !avail.length ? "Sold out" : !v ? "Choose a length" : needColor ? "Choose a colour" : left <= 0 ? "No more available" : `Add to bag · ${naira(v.price * qty)}`;
+      config.innerHTML = `
+        <div class="cfg-head">
+          <img src="${esc(p.model)}" alt="">
+          <div>
+            <div class="eyebrow">${esc(p.tagline)}</div>
+            <h3>${esc(p.name)}</h3>
+            <div class="cfg-price">${v ? naira(v.price) : `<small>from</small> ${naira(minPrice(p))}`}</div>
+          </div>
+          <button class="close-x" data-cfg-close aria-label="Close">${ICON.close}</button>
+        </div>
+        <div class="cfg-group">
+          <div class="cfg-label">Length <span>${len ? esc(len) : "Choose one"}</span></div>
+          <div class="cfg-opts">${p.lengths.map((l) => `
+            <button type="button" data-cfg-len="${esc(l.len)}" class="${l.len === len ? "active" : ""}" ${inStock(l) ? "" : "disabled"} aria-pressed="${l.len === len}">
+              <b>${esc(l.len)}</b><small>${inStock(l) ? naira(l.price) : "Sold out"}</small>
+            </button>`).join("")}
+          </div>
+        </div>
+        ${p.colors.length ? `
+        <div class="cfg-group">
+          <div class="cfg-label">Colour <span>${color ? esc(color) : "Choose one"}</span></div>
+          <div class="cfg-opts cfg-colors">${p.colors.map((c) => `
+            <button type="button" data-cfg-color="${esc(c)}" class="${c === color ? "active" : ""}" aria-pressed="${c === color}">${esc(c)}</button>`).join("")}
+          </div>
+        </div>` : ""}
+        <div class="cfg-group cfg-qty">
+          <div class="cfg-label">Quantity</div>
+          <span class="qty"><button type="button" data-cfg-dec aria-label="Fewer">−</button>${qty}<button type="button" data-cfg-inc aria-label="More">+</button></span>
+          ${v && v.stock != null ? `<small>${left} available</small>` : ""}
+        </div>
+        <button type="button" class="btn btn-dark cfg-add" data-cfg-add ${ready ? "" : "disabled"}>${label}</button>
+        <button type="button" class="link cfg-more" data-cfg-details>View full details</button>`;
+    }
+
+    config.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.hasAttribute("data-cfg-close")) return closeAll();
+      if (b.hasAttribute("data-cfg-details")) { closeAll(); return openQuick(p.id); }
+      if (b.dataset.cfgLen !== undefined) len = b.dataset.cfgLen;
+      else if (b.dataset.cfgColor !== undefined) color = b.dataset.cfgColor;
+      else if (b.hasAttribute("data-cfg-inc")) qty++;
+      else if (b.hasAttribute("data-cfg-dec")) qty--;
+      else if (b.hasAttribute("data-cfg-add")) {
+        if (addToBag(p.id, len, color, qty)) closeAll();
+        return;
+      }
+      draw();
+    };
+
+    draw();
+    modal.classList.remove("open");
+    overlay.classList.add("open");
+    config.classList.add("open");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => (config.querySelector(".cfg-opts button:not(:disabled)") || config).focus({ preventScroll: true }), 50);
+  }
+
   /* ---------- Global click delegation ---------- */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-add],[data-quick],[data-wa],[data-open-bag],[data-pick]");
+    const t = e.target.closest("[data-add],[data-quick],[data-wa],[data-open-bag]");
     if (!t) return;
-    // length chosen on a product card (undefined = none picked yet)
-    const card = t.closest(".product-card");
-    const picked = card && card.dataset.len;
-    if (t.dataset.pick !== undefined && card) {
-      e.preventDefault();
-      const p = byId(card.dataset.id);
-      const l = p && p.lengths[+t.dataset.pick];
-      if (!l || !inStock(l)) return;
-      card.dataset.len = l.len;
-      card.querySelector("[data-card-price]").innerHTML = `${naira(l.price)} <small>· ${l.len}</small>`;
-      card.querySelectorAll("[data-pick]").forEach((b) => {
-        const on = b === t;
-        b.classList.toggle("active", on);
-        b.setAttribute("aria-pressed", on);
-      });
-    }
-    else if (t.dataset.add) { e.preventDefault(); e.stopPropagation(); addToBag(t.dataset.add, picked); }
+    if (t.dataset.add) { e.preventDefault(); e.stopPropagation(); openConfig(t.dataset.add); }
     else if (t.dataset.wa) {
       e.preventDefault(); e.stopPropagation();
       const p = byId(t.dataset.wa);
-      const l = picked && p.lengths.find((x) => x.len === picked);
-      window.open(waLink(l
-        ? `Hi Glow by Grace! I'm interested in the ${p.name} (${l.len}) — ${naira(l.price)}. Is it available?`
-        : `Hi Glow by Grace! I'm interested in the ${p.name} (from ${naira(minPrice(p))}). Is it available?`), "_blank", "noopener");
+      window.open(waLink(`Hi Glow by Grace! I'm interested in the ${p.name} (from ${naira(minPrice(p))}). Is it available?`), "_blank", "noopener");
     }
     else if (t.dataset.quick) { e.preventDefault(); openQuick(t.dataset.quick); }
     else if (t.hasAttribute("data-open-bag")) { e.preventDefault(); openBag(); }
@@ -431,6 +510,7 @@
   window.GBG.productCard = productCard;
   window.GBG.addToBag = addToBag;
   window.GBG.openQuick = openQuick;
+  window.GBG.openConfig = openConfig;
   window.GBG.openBag = openBag;
   window.GBG.observeReveals = observeReveals;
   window.GBG.bagLines = bagLines;

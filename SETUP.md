@@ -24,6 +24,7 @@ Work through the steps in order. You'll collect these values along the way:
 3. **SQL Editor → New query**: paste and run, in order:
    1. `supabase/migrations/20261001000000_init.sql` (tables, security rules, delivery fees)
    2. `supabase/migrations/20261001000001_seed_products.sql` (the starting catalogue — skip it if you'd rather add products yourself)
+   3. `supabase/migrations/20261002000000_product_colours.sql` (optional colour choices per product)
 4. Make the seller an admin (use the Gmail address they'll sign in with):
    ```sql
    insert into public.admins (email) values ('seller@gmail.com');

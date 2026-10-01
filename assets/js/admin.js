@@ -203,7 +203,7 @@
             <td>${p.model ? `<img class="adm-thumb" src="${esc(p.model)}" alt="">` : ""}</td>
             <td><b>${esc(p.name)}</b>${p.featured ? ` <span class="pill pill-info">Featured</span>` : ""}<small>${esc(p.tagline)}</small></td>
             <td>${esc((CATS.find((c) => c.key === p.category) || { label: p.category }).label)}</td>
-            <td>${p.lengths.map((l) => `${esc(l.len)} · ${naira(l.price)}`).join("<br>") || `<span class="err">No lengths</span>`}</td>
+            <td>${p.lengths.map((l) => `${esc(l.len)} · ${naira(l.price)}`).join("<br>") || `<span class="err">No lengths</span>`}${p.colors.length ? `<small>Colours: ${esc(p.colors.join(", "))}</small>` : ""}</td>
             <td>${stock}</td>
             <td>${p.active ? `<span class="pill pill-ok">Live</span>` : `<span class="pill pill-muted">Hidden</span>`}</td>
           </tr>`;
@@ -249,6 +249,7 @@
             <label class="field"><span>Display order</span><input class="input" name="sort" type="number" value="${p ? p.sort : products.length + 1}"></label>
             <label class="field"><span>Lace</span><input class="input" name="lace" value="${p && p.lace !== "—" ? v("lace") : ""}"></label>
             <label class="field"><span>Density</span><input class="input" name="density" value="${p && p.density !== "—" ? v("density") : ""}"></label>
+            <label class="field wide"><span>Colours <i>(optional — separate with commas, e.g. Natural black, 1B, Honey blonde. Leave empty if there's no colour choice)</i></span><input class="input" name="colors" value="${p ? esc(p.colors.join(", ")) : ""}"></label>
             <label class="field wide"><span>Description</span><textarea class="input" name="description" rows="3">${v("desc")}</textarea></label>
             ${imageField("model_url", "Main photo (hair being worn)", p && p.model)}
             ${imageField("sample_url", "Close-up photo (shown on hover)", p && p.sample)}
@@ -318,6 +319,7 @@
       lace: el.lace.value.trim() || null,
       density: el.density.value.trim() || null,
       description: el.description.value.trim() || null,
+      colors: [...new Set(el.colors.value.split(",").map((c) => c.trim()).filter(Boolean))],
       model_url: el.model_url.value.trim() || null,
       sample_url: el.sample_url.value.trim() || null,
       sort: parseInt(el.sort.value, 10) || 0,

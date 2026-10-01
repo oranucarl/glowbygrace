@@ -37,6 +37,7 @@
       desc: r.description || "",
       model: r.model_url || "",
       sample: r.sample_url || r.model_url || "",
+      colors: r.colors || [],
       featured: r.featured,
       active: r.active,
       sort: r.sort,

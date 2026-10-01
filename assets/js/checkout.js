@@ -22,8 +22,9 @@
         <div class="o-items">${lines.map((l) => `
           <div class="o-item">
             <img src="${esc(l.p.model)}" alt="">
-            <div><b>${esc(l.p.name)}</b><small>Length ${esc(l.len)} · Qty ${l.qty} · ${naira(l.price)} each</small>
+            <div><b>${esc(l.p.name)}</b><small>Length ${esc(l.len)}${l.color ? ` · ${esc(l.color)}` : ""} · Qty ${l.qty} · ${naira(l.price)} each</small>
               ${inStock(l.v) ? (l.v.stock != null && l.qty > l.v.stock ? `<small class="err">Only ${l.v.stock} left — please reduce the quantity</small>` : "") : `<small class="err">Sold out — please remove it</small>`}
+              ${l.p.colors.length && !l.p.colors.includes(l.color) ? `<small class="err">Colour no longer available — please remove it and choose again</small>` : ""}
             </div>
             <span>${naira(l.qty * l.price)}</span>
           </div>`).join("")}
@@ -137,7 +138,7 @@
     if (!/^[+\d][\d\s-]{6,}$/.test(get("phone"))) return showError("Please enter a valid phone number.");
     if (!zoneId) return showError("Please choose a delivery option.");
     const lines = bagLines();
-    if (lines.some((l) => !inStock(l.v) || (l.v.stock != null && l.qty > l.v.stock))) {
+    if (lines.some((l) => !inStock(l.v) || (l.v.stock != null && l.qty > l.v.stock) || (l.p.colors.length && !l.p.colors.includes(l.color)))) {
       return showError("Some items in your bag are sold out or low in stock. Please update your bag.");
     }
 
@@ -146,7 +147,7 @@
     updatePay();
     try {
       const res = await API.fn("checkout", {
-        items: lines.map((l) => ({ product_id: l.id, length: l.len, qty: l.qty })),
+        items: lines.map((l) => ({ product_id: l.id, length: l.len, color: l.color, qty: l.qty })),
         zone_id: zoneId,
         customer: { name: get("name"), phone: get("phone"), address: get("address"), city: get("city"), state: get("state"), notes: get("notes") },
         save_details: f.get("save") === "on",

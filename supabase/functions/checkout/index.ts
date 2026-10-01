@@ -2,7 +2,7 @@
 // Prices, stock and delivery fees are always read from the database here —
 // nothing the browser sends about money is trusted.
 //
-// POST { items: [{product_id, length, qty}], zone_id, customer: {...}, save_details, return_url }
+// POST { items: [{product_id, length, color?, qty}], zone_id, customer: {...}, save_details, return_url }
 //   -> { order_id, order_number, authorization_url }
 // POST { order_id, return_url }   (retry payment for an unpaid order)
 //   -> { order_id, order_number, authorization_url }
@@ -17,13 +17,13 @@ const text = (v: unknown, field: string, max = 200, required = true) => {
   return s;
 };
 
-type Line = { product_id: string; length: string; qty: number };
+type Line = { product_id: string; length: string; color: string | null; qty: number };
 
 async function priceLines(lines: Line[]) {
   const ids = [...new Set(lines.map((l) => l.product_id))];
   const { data: variants, error } = await db
     .from("product_variants")
-    .select("id, product_id, length, price, stock, products!inner(name, active, model_url)")
+    .select("id, product_id, length, price, stock, products!inner(name, active, model_url, colors)")
     .in("product_id", ids);
   if (error) throw error;
 
@@ -31,6 +31,10 @@ async function priceLines(lines: Line[]) {
     const v = (variants as any[]).find((x) => x.product_id === l.product_id && x.length === l.length);
     if (!v || !v.products.active) {
       throw new HttpError(409, "An item in your bag is no longer available. Please remove it and try again.");
+    }
+    const colors: string[] = v.products.colors || [];
+    if (colors.length && !colors.includes(l.color || "")) {
+      throw new HttpError(409, `Please choose a colour for ${v.products.name} — available: ${colors.join(", ")}.`);
     }
     if (v.stock !== null && v.stock < l.qty) {
       throw new HttpError(
@@ -45,6 +49,7 @@ async function priceLines(lines: Line[]) {
       variant_id: v.id,
       product_name: v.products.name,
       length: v.length,
+      color: colors.length ? l.color : null,
       unit_price: v.price,
       quantity: l.qty,
       line_total: v.price * l.qty,
@@ -62,12 +67,12 @@ Deno.serve(handle(async (req) => {
   if (body.order_id) {
     const { data: order } = await db
       .from("orders")
-      .select("id, order_number, email, total, status, user_id, order_items(product_id, length, quantity)")
+      .select("id, order_number, email, total, status, user_id, order_items(product_id, length, color, quantity)")
       .eq("id", body.order_id)
       .maybeSingle();
     if (!order || order.user_id !== user.id) throw new HttpError(404, "Order not found.");
     if (order.status !== "pending_payment") throw new HttpError(409, "This order is no longer awaiting payment.");
-    await priceLines(order.order_items.map((i: any) => ({ product_id: i.product_id, length: i.length, qty: i.quantity })));
+    await priceLines(order.order_items.map((i: any) => ({ product_id: i.product_id, length: i.length, color: i.color, qty: i.quantity })));
     return json(await startPayment(order, returnUrl));
   }
 
@@ -89,14 +94,24 @@ Deno.serve(handle(async (req) => {
   const merged = new Map<string, Line>();
   for (const raw of body.items) {
     const qty = Number(raw?.qty);
+    const color = typeof raw?.color === "string" && raw.color.trim() ? raw.color.trim().slice(0, 60) : null;
     if (typeof raw?.product_id !== "string" || typeof raw?.length !== "string" || !Number.isInteger(qty) || qty < 1 || qty > 20) {
       throw new HttpError(400, "Your bag contains an invalid item.");
     }
-    const key = `${raw.product_id}|${raw.length}`;
+    const key = `${raw.product_id}|${raw.length}|${color || ""}`;
     const prev = merged.get(key);
-    merged.set(key, { product_id: raw.product_id, length: raw.length, qty: (prev?.qty || 0) + qty });
+    merged.set(key, { product_id: raw.product_id, length: raw.length, color, qty: (prev?.qty || 0) + qty });
   }
   const items = await priceLines([...merged.values()]);
+  // stock is per length, so the same length in two colours must fit together
+  const perVariant = new Map<string, number>();
+  for (const i of items) perVariant.set(i.variant_id, (perVariant.get(i.variant_id) || 0) + i.quantity);
+  const { data: stockRows } = await db.from("product_variants").select("id, stock").in("id", [...perVariant.keys()]);
+  for (const r of stockRows || []) {
+    if (r.stock !== null && (perVariant.get(r.id) || 0) > r.stock) {
+      throw new HttpError(409, `Only ${r.stock} left of one of the lengths in your bag. Please reduce the quantity.`);
+    }
+  }
 
   const { data: zone } = await db.from("delivery_zones").select("id, name, fee").eq("id", body.zone_id).eq("active", true).maybeSingle();
   if (!zone) throw new HttpError(400, "Please choose a delivery option.");

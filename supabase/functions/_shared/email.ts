@@ -1,6 +1,6 @@
 import { env } from "./http.ts";
 
-type Item = { product_name: string; length: string; unit_price: number; quantity: number; line_total: number; image_url: string | null };
+type Item = { product_name: string; length: string; color?: string | null; unit_price: number; quantity: number; line_total: number; image_url: string | null };
 type Order = {
   id: string;
   order_number: string;
@@ -46,7 +46,7 @@ function itemsTable(order: Order) {
         </td>
         <td style="padding:14px 12px;border-bottom:1px solid ${C.cream2};vertical-align:top">
           <div style="font-family:Georgia,serif;font-size:16px;color:${C.espresso}">${esc(i.product_name)}</div>
-          <div style="font-size:13px;color:${C.muted};margin-top:4px">Length ${esc(i.length)} · Qty ${i.quantity} · ${naira(i.unit_price)} each</div>
+          <div style="font-size:13px;color:${C.muted};margin-top:4px">Length ${esc(i.length)}${i.color ? ` · ${esc(i.color)}` : ""} · Qty ${i.quantity} · ${naira(i.unit_price)} each</div>
         </td>
         <td style="padding:14px 0;border-bottom:1px solid ${C.cream2};text-align:right;vertical-align:top;font-weight:700;white-space:nowrap">${naira(i.line_total)}</td>
       </tr>`
@@ -137,7 +137,7 @@ function customerEmail(order: Order) {
 }
 
 function customerText(order: Order) {
-  const items = order.order_items.map((i) => `- ${i.product_name} (${i.length}) x${i.quantity}: ${naira(i.line_total)}`).join("\n");
+  const items = order.order_items.map((i) => `- ${i.product_name} (${i.length}${i.color ? `, ${i.color}` : ""}) x${i.quantity}: ${naira(i.line_total)}`).join("\n");
   return `Thank you for your order, ${order.customer_name}!
 
 Order ${order.order_number} — paid ${lagosTime(order.paid_at)}

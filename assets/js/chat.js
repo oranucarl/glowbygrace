@@ -8,7 +8,7 @@
    shopper wants a human.
    ========================================================= */
 (function () {
-  const { naira, minPrice, waLink, ICON, addToBag, openQuick, inStock } = window.GBG;
+  const { naira, minPrice, waLink, ICON, openConfig, openQuick, inStock } = window.GBG;
   const PRODUCTS = window.GBG_PRODUCTS;
 
   const STYLE_LABEL = {
@@ -167,7 +167,7 @@
           };
         });
         el.querySelector("[data-a]").onclick = () => {
-          addToBag(p.id, fit.len);
+          openConfig(p.id, { len: fit.len });
           if (!state.liked.includes(p.name)) state.liked.push(p.name);
         };
         el.querySelector("[data-v]").onclick = () => {

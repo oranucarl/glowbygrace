@@ -34,7 +34,7 @@
     return `<div class="o-items">${(order.order_items || []).map((i) => `
       <div class="o-item">
         ${i.image_url ? `<img src="${esc(i.image_url)}" alt="">` : `<span class="o-noimg"></span>`}
-        <div><b>${esc(i.product_name)}</b><small>Length ${esc(i.length)} · Qty ${i.quantity} · ${naira(i.unit_price)} each</small></div>
+        <div><b>${esc(i.product_name)}</b><small>Length ${esc(i.length)}${i.color ? ` · ${esc(i.color)}` : ""} · Qty ${i.quantity} · ${naira(i.unit_price)} each</small></div>
         <span>${naira(i.line_total)}</span>
       </div>`).join("")}
     </div>`;
