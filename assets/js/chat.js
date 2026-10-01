@@ -8,7 +8,7 @@
    shopper wants a human.
    ========================================================= */
 (function () {
-  const { naira, minPrice, waLink, ICON, addToBag, openQuick } = window.GBG;
+  const { naira, minPrice, waLink, ICON, addToBag, openQuick, inStock } = window.GBG;
   const PRODUCTS = window.GBG_PRODUCTS;
 
   const STYLE_LABEL = {
@@ -156,7 +156,7 @@
           <div class="t">
             <h5>${p.name}</h5>
             <div class="p">${naira(fit.price)} <small>· ${fit.len}</small></div>
-            <div class="ls">${p.lengths.map((l, i) => `<button type="button" data-l="${i}"${l === fit ? ' class="on"' : ""}>${l.len}</button>`).join("")}</div>
+            <div class="ls">${p.lengths.map((l, i) => `<button type="button" data-l="${i}"${l === fit ? ' class="on"' : ""}${inStock(l) ? "" : " disabled"}>${l.len}</button>`).join("")}</div>
             <div class="rb"><button data-a>Add</button><button class="ghost" data-v>View</button></div>
           </div>`;
         el.querySelectorAll("[data-l]").forEach((b) => {
@@ -184,17 +184,19 @@
 
   /* ---------- Logic ---------- */
   function bestLength(p, budget) {
-    if (!budget) return p.lengths[0];
-    const inRange = p.lengths.filter((l) => l.price >= budget.min && l.price <= budget.max);
+    const avail = p.lengths.filter(inStock);
+    if (!avail.length) return p.lengths[0];
+    if (!budget) return avail[0];
+    const inRange = avail.filter((l) => l.price >= budget.min && l.price <= budget.max);
     if (inRange.length) return inRange[inRange.length - 1]; // longest that fits
-    const under = p.lengths.filter((l) => l.price <= budget.max);
-    return under.length ? under[under.length - 1] : p.lengths[0];
+    const under = avail.filter((l) => l.price <= budget.max);
+    return under.length ? under[under.length - 1] : avail[0];
   }
 
   function matches(style, budget) {
-    let list = PRODUCTS.slice();
+    let list = PRODUCTS.filter((p) => p.lengths.some(inStock));
     if (style && style !== "any") list = list.filter((p) => p.category === style);
-    if (budget) list = list.filter((p) => p.lengths.some((l) => l.price <= budget.max && l.price >= budget.min));
+    if (budget) list = list.filter((p) => p.lengths.some((l) => inStock(l) && l.price <= budget.max && l.price >= budget.min));
     // bestsellers first, then by price
     return list.sort((a, b) => (b.badge === "Bestseller") - (a.badge === "Bestseller") || minPrice(a) - minPrice(b));
   }
@@ -369,15 +371,22 @@
       return followUps();
     }
     if (/deliver|shipping|ship|how long|arrive|location|where are you|pick ?up/.test(t)) {
-      bot("🚚 <b>Lagos:</b> same-day or next-day delivery.<br>🇳🇬 <b>Nationwide:</b> 2–4 working days.<br>🌍 International shipping available on request. Delivery fee is confirmed on WhatsApp at checkout.");
+      const zones = (window.GBG_ZONES || [])
+        .map((z) => `🚚 <b>${z.name}:</b> ${z.fee ? naira(z.fee) : "free"}${z.description ? ` — ${z.description}` : ""}`)
+        .join("<br>");
+      bot(`${zones || "🚚 Delivery options are shown at checkout."}<br>You'll see the exact delivery fee at checkout before you pay.`);
       return followUps();
     }
-    if (/pay|payment|transfer|card|installment|part pay/.test(t)) {
-      bot("💳 Checkout happens on WhatsApp — the team confirms your order, then you pay by bank transfer (or any option they offer). Want me to connect you?");
+    if (/pay|payment|transfer|card|installment|part pay|checkout|check out/.test(t)) {
+      bot("💳 Add your hair to the bag, then tap <b>Checkout</b>. You sign in with Google, enter your delivery details and pay securely with Paystack — card, bank transfer or USSD. You'll get an email confirmation and can track the order in your account.");
       return quick([
-        { label: "Yes, connect me", wa: true, run: handoff },
+        { label: "Go to checkout", run: () => { location.href = "checkout.html"; } },
         { label: "Keep browsing", run: () => { bot("Sure! What style?"); askStyle(); } }
       ]);
+    }
+    if (/my order|track|order status|where is my/.test(t)) {
+      bot('You can see every order and its status in <a href="account.html" style="text-decoration:underline;font-weight:700">your account</a> — sign in with the same Google account you checked out with.');
+      return followUps();
     }
     if (/return|refund|exchange/.test(t)) {
       bot("We want you to love your hair! Unworn units with the lace uncut can be exchanged — message the seller within 48 hours of delivery and they'll sort you out.");

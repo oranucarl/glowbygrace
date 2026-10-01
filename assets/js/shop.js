@@ -1,7 +1,17 @@
 /* Glow by Grace — shop page filters */
 (function () {
-  const { productCard, minPrice, observeReveals } = window.GBG;
+  const { productCard, minPrice, observeReveals, ready } = window.GBG;
   const PRODUCTS = window.GBG_PRODUCTS;
+
+  const grid = document.querySelector("[data-grid]");
+  const count = document.querySelector("[data-count]");
+  grid.innerHTML = `<p class="loading-note">Loading the collection…</p>`;
+
+  ready.then(() => {
+  if (window.GBG_API.catalogError) {
+    grid.innerHTML = `<p class="loading-note">${window.GBG_API.catalogError}</p>`;
+    return;
+  }
   const CATS = window.GBG_CATEGORIES.filter(
     (c) => c.key === "all" || PRODUCTS.some((p) => p.category === c.key)
   );
@@ -14,8 +24,6 @@
   };
 
   const chips = document.querySelector("[data-chips]");
-  const grid = document.querySelector("[data-grid]");
-  const count = document.querySelector("[data-count]");
   const empty = document.querySelector("[data-empty]");
   const priceSel = document.querySelector("[data-price]");
   const sortSel = document.querySelector("[data-sort]");
@@ -61,4 +69,5 @@
   sortSel.addEventListener("change", () => { state.sort = sortSel.value; render(); });
 
   render();
+  });
 })();

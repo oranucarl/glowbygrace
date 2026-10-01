@@ -184,15 +184,21 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="assets/js/config.js"></script>
   <script src="assets/js/products.js"></script>
+  <script src="assets/js/api.js"></script>
   <script src="assets/js/main.js"></script>
   <script src="assets/js/chat.js"></script>
   <script>
     (function () {
-      const featured = ["grace-bone-straight", "kinky-curly", "deep-wave", "blunt-bob"]
-        .map(GBG.byId).filter(Boolean);
-      document.querySelector("[data-featured]").innerHTML = featured.map(GBG.productCard).join("");
-      GBG.observeReveals();
+      const el = document.querySelector("[data-featured]");
+      GBG.ready.then(() => {
+        if (GBG_API.catalogError) { el.innerHTML = `<p class="loading-note">${GBG_API.catalogError}</p>`; return; }
+        const featured = GBG_PRODUCTS.filter((p) => p.featured);
+        el.innerHTML = (featured.length ? featured : GBG_PRODUCTS).slice(0, 4).map(GBG.productCard).join("");
+        GBG.observeReveals();
+      });
       // same clip in each panel, started at different points so the three panels show different moments
       document.querySelectorAll(".hero video[data-offset]").forEach(v => {
         const seek = () => { if (v.duration) v.currentTime = v.duration * parseFloat(v.dataset.offset); };

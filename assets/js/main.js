@@ -3,7 +3,8 @@
    ========================================================= */
 (function () {
   const STORE = window.GBG_STORE;
-  const PRODUCTS = window.GBG_PRODUCTS || [];
+  const PRODUCTS = window.GBG_PRODUCTS;
+  const API = window.GBG_API;
 
   /* ---------- Icons ---------- */
   const ICON = {
@@ -19,19 +20,24 @@
     sparkle: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z"/></svg>`,
     close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>`,
     wa: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.4zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>`,
+    user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.4-6 8-6s6.5 2 8 6"/></svg>`,
+    google: `<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>`,
     arrow: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`
   };
   window.GBG_ICON = ICON;
 
   /* ---------- Helpers ---------- */
   const naira = (n) => "₦" + Number(n).toLocaleString("en-NG");
-  const minPrice = (p) => Math.min(...p.lengths.map((l) => l.price));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const inStock = (l) => l.stock === null || l.stock === undefined || l.stock > 0;
+  const soldOut = (p) => !p.lengths.some(inStock);
+  const minPrice = (p) => Math.min(...(p.lengths.filter(inStock).length ? p.lengths.filter(inStock) : p.lengths).map((l) => l.price));
   const byId = (id) => PRODUCTS.find((p) => p.id === id);
   const waLink = (text) =>
     `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(text)}`;
   const page = document.body.dataset.page || "home";
 
-  window.GBG = { naira, minPrice, byId, waLink, ICON };
+  window.GBG = { naira, esc, inStock, soldOut, minPrice, byId, waLink, ICON, ready: API.ready };
 
   /* ---------- Header ---------- */
   const header = document.createElement("header");
@@ -58,6 +64,7 @@
         </a>
       </div>
       <div class="nav-right">
+        <a class="icon-btn account-btn" href="account.html" data-account aria-label="Your account" title="Your account">${ICON.user}</a>
         <button class="icon-btn" data-open-bag aria-label="Open bag">${ICON.bag}</button>
       </div>
     </div>`;
@@ -93,7 +100,8 @@
           <h5>Explore</h5>
           <a href="index.html">Home</a><br>
           <a href="shop.html">Shop all hair</a><br>
-          <a href="#" data-open-chat>Ask Grace (hair assistant)</a>
+          <a href="#" data-open-chat>Ask Grace (hair assistant)</a><br>
+          <a href="account.html">My account &amp; orders</a>
         </div>
         <div>
           <h5>Shop by style</h5>
@@ -164,8 +172,11 @@
   function addToBag(id, len) {
     const p = byId(id);
     if (!p) return;
-    const length = len || p.lengths[0].len;
+    const variant = len ? p.lengths.find((l) => l.len === len) : p.lengths.find(inStock);
+    if (!variant || !inStock(variant)) { toast(`${p.name}${len ? ` (${len})` : ""} is sold out`); return; }
+    const length = variant.len;
     const line = bag.find((l) => l.id === id && l.len === length);
+    if (line && variant.stock != null && line.qty >= variant.stock) { toast(`Only ${variant.stock} of this length left`); return; }
     if (line) line.qty += 1;
     else bag.push({ id, len: length, qty: 1 });
     saveBag();
@@ -178,8 +189,9 @@
       .map((l) => {
         const p = byId(l.id);
         if (!p) return null;
-        const v = p.lengths.find((x) => x.len === l.len) || p.lengths[0];
-        return { ...l, p, price: v.price };
+        const v = p.lengths.find((x) => x.len === l.len);
+        if (!v) return null;
+        return { ...l, p, v, price: v.price };
       })
       .filter(Boolean);
   }
@@ -213,10 +225,18 @@
       )
       .join("");
     const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
+    const zones = (window.GBG_ZONES || []).map((z) => `${esc(z.name)}: ${z.fee ? naira(z.fee) : "free"}`).join(" · ");
     foot.innerHTML = `
       <div class="total"><span>Subtotal</span><span>${naira(total)}</span></div>
-      <p class="note">Checkout happens on WhatsApp — we'll confirm stock, delivery fee and payment details with you directly.</p>
-      <a class="btn btn-wa" target="_blank" rel="noopener" href="${waLink(orderMessage(lines, total))}">${ICON.wa} Checkout on WhatsApp</a>`;
+      <p class="note">${zones ? `Delivery — ${zones}. ` : ""}Pay securely by card, bank transfer or USSD at checkout.</p>
+      <a class="btn btn-dark" href="checkout.html">Checkout ${ICON.arrow}</a>
+      <a class="bag-wa" target="_blank" rel="noopener" href="${waLink(orderMessage(lines, total))}">${ICON.wa} Questions first? Ask us on WhatsApp</a>`;
+  }
+
+  function clearBag() {
+    bag = [];
+    saveBag();
+    renderBag();
   }
 
   function orderMessage(lines, total) {
@@ -233,7 +253,10 @@
     if (idx === undefined) return;
     const target = lines[idx];
     const real = bag.find((l) => l.id === target.id && l.len === target.len);
-    if (inc !== undefined) real.qty++;
+    if (inc !== undefined) {
+      if (target.v.stock != null && real.qty >= target.v.stock) return toast(`Only ${target.v.stock} of this length left`);
+      real.qty++;
+    }
     if (dec !== undefined) real.qty = Math.max(0, real.qty - 1);
     if (rm !== undefined || real.qty === 0) bag = bag.filter((l) => l !== real);
     saveBag();
@@ -249,16 +272,18 @@
 
   /* ---------- Product card ---------- */
   function productCard(p) {
+    const out = soldOut(p);
+    const tag = out ? "Sold out" : p.badge;
     return `
-      <article class="product-card reveal" data-id="${p.id}">
+      <article class="product-card reveal${out ? " sold-out" : ""}" data-id="${p.id}">
         <div class="product-media" data-quick="${p.id}" role="button" tabindex="0" aria-label="View ${p.name}">
-          ${p.badge ? `<span class="tag">${p.badge}</span>` : ""}
+          ${tag ? `<span class="tag">${tag}</span>` : ""}
           <span class="swap-hint"><span class="h">Hover to see hair</span><span class="t">Tap to see hair</span></span>
           <img class="img-model" src="${p.model}" alt="${p.name} worn by a model" loading="lazy">
           <img class="img-sample" src="${p.sample}" alt="${p.name} hair close-up" loading="lazy">
           <span class="product-actions">
             <button type="button" class="qv" data-quick="${p.id}">Quick view</button>
-            <button type="button" data-add="${p.id}">Add to bag</button>
+            ${out ? "" : `<button type="button" data-add="${p.id}">Add to bag</button>`}
             <button type="button" class="wa" data-wa="${p.id}" aria-label="Order ${p.name} on WhatsApp">${ICON.wa}</button>
           </span>
         </div>
@@ -266,7 +291,7 @@
           <div class="meta">${p.tagline}</div>
           <h3>${p.name}</h3>
           <div class="price"><small>from</small>${naira(minPrice(p))}</div>
-          <div class="lengths">${p.lengths.map((l) => `<span>${l.len}</span>`).join("")}</div>
+          <div class="lengths">${p.lengths.map((l) => `<span${inStock(l) ? "" : ' class="out"'}>${l.len}</span>`).join("")}</div>
         </div>
       </article>`;
   }
@@ -275,7 +300,7 @@
   function openQuick(id) {
     const p = byId(id);
     if (!p) return;
-    let sel = p.lengths[0];
+    let sel = p.lengths.find(inStock) || p.lengths[0];
     modal.innerHTML = `
       <button class="close-x" data-close aria-label="Close">${ICON.close}</button>
       <div class="modal-media">
@@ -296,10 +321,10 @@
         </div>
         <div class="len-label">Length</div>
         <div class="len-options">${p.lengths
-          .map((l, i) => `<button class="${i === 0 ? "active" : ""}" data-len="${i}">${l.len}</button>`)
+          .map((l, i) => `<button class="${l === sel ? "active" : ""}" data-len="${i}"${inStock(l) ? "" : ' disabled title="Sold out"'}>${l.len}${inStock(l) ? "" : " · sold out"}</button>`)
           .join("")}</div>
         <div class="btns">
-          <button class="btn btn-dark" data-modal-add>Add to bag ${ICON.bag}</button>
+          <button class="btn btn-dark" data-modal-add${inStock(sel) ? "" : " disabled"}>${inStock(sel) ? `Add to bag ${ICON.bag}` : "Sold out"}</button>
           <a class="btn btn-wa" data-modal-wa target="_blank" rel="noopener" href="#">${ICON.wa} Order on WhatsApp</a>
         </div>
       </div>`;
@@ -370,13 +395,29 @@
     root.querySelectorAll(".reveal:not(.in)").forEach((el) => (io ? io.observe(el) : el.classList.add("in")));
   }
 
+  /* ---------- Account button ---------- */
+  function renderAccount(user) {
+    document.querySelectorAll("[data-account]").forEach((a) => {
+      const pic = user && API.avatar(user);
+      a.classList.toggle("signed-in", !!user);
+      a.title = user ? `Signed in as ${API.displayName(user)}` : "Sign in / your account";
+      a.innerHTML = pic ? `<img src="${esc(pic)}" alt="" referrerpolicy="no-referrer">` : ICON.user;
+    });
+  }
+  API.user().then(renderAccount);
+  API.onAuth(renderAccount);
+
   window.GBG.productCard = productCard;
   window.GBG.addToBag = addToBag;
   window.GBG.openQuick = openQuick;
   window.GBG.openBag = openBag;
   window.GBG.observeReveals = observeReveals;
+  window.GBG.bagLines = bagLines;
+  window.GBG.clearBag = clearBag;
+  window.GBG.toast = toast;
 
   renderBag();
+  API.ready.then(renderBag);
   document.addEventListener("DOMContentLoaded", () => observeReveals());
   observeReveals();
 })();

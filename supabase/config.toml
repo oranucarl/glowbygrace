@@ -1,0 +1,12 @@
+project_id = "glowbygrace"
+
+# Functions check the signed-in user themselves (or the Paystack signature),
+# so the gateway's JWT check is turned off.
+[functions.checkout]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.paystack-webhook]
+verify_jwt = false

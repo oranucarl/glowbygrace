@@ -12,3 +12,9 @@ node_modules/
 
 # Local backups
 .local-backups/
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+.env
+.env.*
