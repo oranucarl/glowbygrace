@@ -128,7 +128,7 @@ function customerEmail(order: Order) {
       <h2 style="font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px">What happens next</h2>
       <ol style="margin:0 0 22px;padding-left:18px;font-size:14px;line-height:1.7;color:${C.espresso}">
         <li>We inspect and pack your hair by hand.</li>
-        <li>We send it out to ${esc(order.delivery_zone_name.toLowerCase())} and update your order status.</li>
+        <li>We send it out for delivery (${esc(order.delivery_zone_name)}) and update your order status.</li>
         <li>You glow. ✦</li>
       </ol>
       <a href="${siteUrl()}/account.html#${encodeURIComponent(order.order_number)}" style="display:inline-block;background:${C.espresso};color:${C.cream};text-decoration:none;padding:14px 26px;border-radius:999px;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase">Track your order</a>
