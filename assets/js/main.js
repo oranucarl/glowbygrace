@@ -117,7 +117,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© ${new Date().getFullYear()} Glow by Grace. All rights reserved.</span>
+        <span>© ${new Date().getFullYear()} Glow by Grace. All rights reserved. · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></span>
         <span>Made with love in Lagos ✦</span>
       </div>
     </div>`;

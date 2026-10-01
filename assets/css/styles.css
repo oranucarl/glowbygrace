@@ -1215,6 +1215,13 @@ section.order-card .o-meta { margin-bottom: 22px; }
   .page.narrow, .page.wide { width: calc(100% - 32px); }
 }
 
+/* ---------- Legal pages ---------- */
+.legal { line-height: 1.75; font-size: .97rem; }
+.legal h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.6rem; margin: 34px 0 10px; }
+.legal ul { padding-left: 20px; }
+.legal li { margin-bottom: 8px; }
+.legal a { text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {
   .product-grid { grid-template-columns: repeat(3, 1fr); }

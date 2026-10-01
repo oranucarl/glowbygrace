@@ -92,6 +92,7 @@
 
         <p class="err" data-error hidden></p>
         <button class="btn btn-dark co-pay" data-pay>Pay securely</button>
+        <p class="co-secure">By paying you agree to our <a href="terms.html" style="text-decoration:underline">terms</a> and <a href="privacy.html" style="text-decoration:underline">privacy policy</a>.</p>
       </form>`;
   }
 
