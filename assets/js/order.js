@@ -74,8 +74,11 @@
     if (!orderId) return message("No order selected", "Open your orders from your account.", `<a class="btn btn-dark" href="account.html">My account</a>`);
     const user = await API.user();
     if (!user) {
-      message("Please sign in", "Sign in with the Google account you used at checkout to see this order.", `<button class="btn btn-google" data-signin>${ICON.google} Continue with Google</button>`);
-      root.querySelector("[data-signin]").onclick = () => API.signIn(location.href);
+      root.innerHTML = `<div class="auth-center" data-auth></div>`;
+      window.GBG_AUTH.render(root.querySelector("[data-auth]"), {
+        title: "Sign in to see this order",
+        text: "Use the same account (Google or email) you checked out with."
+      });
       return;
     }
 

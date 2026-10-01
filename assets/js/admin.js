@@ -498,8 +498,8 @@
     user = u;
     if (!API.configured) { root.innerHTML = `<p class="loading-note">${esc(API.catalogError || "The shop isn't connected yet.")}</p>`; return; }
     if (!user) {
-      root.innerHTML = `<section class="card co-signin center"><h3>Store admin</h3><p>Sign in with the Google account that has admin access.</p><button class="btn btn-google" data-signin>${ICON.google} Continue with Google</button></section>`;
-      root.querySelector("[data-signin]").onclick = () => API.signIn(location.href.split("#")[0]);
+      root.innerHTML = `<div class="auth-center" data-auth></div>`;
+      window.GBG_AUTH.render(root.querySelector("[data-auth]"), { title: "Store admin", text: "Sign in with an admin account." });
       return;
     }
     if (!(await API.isAdmin())) {

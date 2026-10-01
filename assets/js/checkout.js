@@ -1,7 +1,6 @@
 /* Glow by Grace — checkout page */
 (function () {
   const { naira, esc, ICON, bagLines, clearBag, openBag, inStock } = window.GBG;
-  const GOOGLE = ICON.google;
   const API = window.GBG_API;
   const root = document.querySelector("[data-checkout]");
 
@@ -39,12 +38,7 @@
   }
 
   function signInPanel() {
-    return `
-      <section class="card co-signin">
-        <h3>Sign in to check out</h3>
-        <p>Use your Google account so you can track this order, see your order history and check out faster next time.</p>
-        <button class="btn btn-google" data-signin>${GOOGLE} Continue with Google</button>
-      </section>`;
+    return `<div data-auth></div>`;
   }
 
   function form() {
@@ -108,6 +102,13 @@
       return;
     }
     root.innerHTML = `<div class="co-grid"><div>${user ? form() : signInPanel()}</div>${summary(lines)}</div>`;
+    if (!user) {
+      window.GBG_AUTH.render(root.querySelector("[data-auth]"), {
+        title: "Sign in to check out",
+        text: "Sign in or create an account so you can track this order and check out faster next time. Your bag is saved.",
+        onSignedIn: () => {}
+      });
+    }
     updatePay();
   }
 
@@ -164,9 +165,7 @@
   }
 
   root.addEventListener("click", async (e) => {
-    if (e.target.closest("[data-signin]")) {
-      try { await API.signIn(location.href); } catch (err) { alert(err.message); }
-    } else if (e.target.closest("[data-signout]")) {
+    if (e.target.closest("[data-signout]")) {
       await API.signOut();
     } else if (e.target.closest("[data-edit-bag]")) {
       openBag();

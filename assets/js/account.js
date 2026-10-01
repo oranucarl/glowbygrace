@@ -16,11 +16,12 @@
         <div class="eyebrow">Your account</div>
         <h1 class="display">Welcome <em>back</em></h1>
       </div>
-      <section class="card co-signin center">
-        <h3>Sign in to see your orders</h3>
-        <p>Track deliveries, view past orders and check out faster. New here? Signing in creates your account automatically.</p>
-        <button class="btn btn-google" data-signin>${ICON.google} Continue with Google</button>
-      </section>`;
+      <div class="auth-center" data-auth></div>`;
+    window.GBG_AUTH.render(root.querySelector("[data-auth]"), {
+      title: "Sign in to see your orders",
+      text: "Track deliveries, view past orders and check out faster. New here? Create an account or continue with Google.",
+      onSignedIn: () => {}
+    });
   }
 
   function orderCard(o) {
@@ -73,6 +74,27 @@
           <label class="field"><span>Email</span><input value="${esc(user.email)}" disabled></label>
         </div>
         <button class="btn btn-dark">Save details</button>
+      </form>
+      ${loginView()}`;
+  }
+
+  function loginView() {
+    const providers = API.providers(user);
+    const hasPassword = providers.includes("email");
+    const hasGoogle = providers.includes("google");
+    return `
+      <form class="card co-form login-card" data-password novalidate>
+        <h3>Sign-in &amp; password</h3>
+        <p class="muted">You can sign in to this account with:</p>
+        <ul class="login-methods">
+          <li class="${hasGoogle ? "on" : ""}">${ICON.google}<span><b>Google</b>${hasGoogle ? "Connected" : `Sign in with Google using ${esc(user.email)} and it will connect automatically`}</span></li>
+          <li class="${hasPassword ? "on" : ""}"><span class="em-ico">✉</span><span><b>Email &amp; password</b>${hasPassword ? "Set up" : "Not set up yet — add a password below"}</span></li>
+        </ul>
+        <div class="fields">
+          ${window.GBG_AUTH.passwordField("password", hasPassword ? "New password" : "Create a password", "new-password", "At least 8 characters")}
+        </div>
+        <p class="err" data-pw-err hidden></p>
+        <button class="btn btn-dark">${hasPassword ? "Change password" : "Add password"}</button>
       </form>`;
   }
 
@@ -126,8 +148,13 @@
   root.addEventListener("click", async (e) => {
     const t = e.target.closest("button");
     if (!t) return;
-    if (t.hasAttribute("data-signin")) return API.signIn(location.href).catch((err) => toast(err.message));
     if (t.hasAttribute("data-signout")) { await API.signOut(); return; }
+    if (t.hasAttribute("data-pw-toggle")) {
+      const input = t.parentElement.querySelector("input");
+      input.type = input.type === "password" ? "text" : "password";
+      t.textContent = input.type === "password" ? "Show" : "Hide";
+      return;
+    }
     if (t.dataset.tab) { tab = t.dataset.tab; return render(); }
     if (t.hasAttribute("data-toggle")) { const c = t.closest(".order-card"); return toggle(c, !c.classList.contains("open")); }
     if (t.dataset.pay) {
@@ -150,6 +177,23 @@
   });
 
   root.addEventListener("submit", async (e) => {
+    if (e.target.matches("[data-password]")) {
+      e.preventDefault();
+      const pw = e.target.elements.password.value;
+      const errEl = e.target.querySelector("[data-pw-err]");
+      errEl.hidden = true;
+      if (pw.length < 8) { errEl.textContent = "Your password needs at least 8 characters."; errEl.hidden = false; return; }
+      try {
+        await API.updatePassword(pw);
+        user = await API.user();
+        toast("Password saved ✦");
+        render();
+      } catch (err) {
+        errEl.textContent = API.authMessage(err);
+        errEl.hidden = false;
+      }
+      return;
+    }
     if (!e.target.matches("[data-profile]")) return;
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));

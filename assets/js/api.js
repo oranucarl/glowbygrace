@@ -12,7 +12,11 @@
     !!cfg.supabaseAnonKey &&
     !/YOUR-/.test(cfg.supabaseUrl + cfg.supabaseAnonKey);
 
+  // a password-reset link lands with #...type=recovery; note it before the client tidies the URL
+  const recoveryLink = /type=recovery/.test(location.hash);
   const sb = configured && window.supabase ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
+  let recovery = recoveryLink;
+  if (sb) sb.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") recovery = true; });
   const NOT_READY = "The shop isn't connected to its database yet. Add your Supabase details to assets/js/config.js.";
 
   function need() {
@@ -85,6 +89,61 @@
       });
       if (error) throw error;
     },
+    get recovery() { return recovery; },
+    clearRecovery() { recovery = false; },
+
+    // ---- email + password ----
+    async signInWithPassword(email, password) {
+      const { data, error } = await need().auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return data.user;
+    },
+    // Returns { needsConfirmation } — new accounts must confirm their email before signing in.
+    async signUp(email, password, name, redirectTo) {
+      const { data, error } = await need().auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name }, emailRedirectTo: redirectTo || location.href.split("#")[0] }
+      });
+      if (error) throw error;
+      // an existing, confirmed account comes back with no identities (Supabase doesn't reveal it directly)
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        const err = new Error("exists");
+        err.code = "account_exists";
+        throw err;
+      }
+      return { needsConfirmation: !data.session };
+    },
+    async resendConfirmation(email, redirectTo) {
+      const { error } = await need().auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectTo || location.href.split("#")[0] } });
+      if (error) throw error;
+    },
+    async sendPasswordReset(email) {
+      const { error } = await need().auth.resetPasswordForEmail(email, { redirectTo: new URL("account.html", location.href).href });
+      if (error) throw error;
+    },
+    async updatePassword(password) {
+      const { error } = await need().auth.updateUser({ password });
+      if (error) throw error;
+    },
+    // which ways this user can sign in, e.g. ["google", "email"]
+    providers(user) {
+      const fromIdentities = ((user && user.identities) || []).map((i) => i.provider);
+      return [...new Set([...(((user && user.app_metadata) || {}).providers || []), ...fromIdentities])];
+    },
+    // Supabase error -> message a shopper understands
+    authMessage(err) {
+      const code = (err && (err.code || "")) + " " + ((err && err.message) || "");
+      if (/account_exists|user_already_exists|already registered/i.test(code)) return "An account with this email already exists. Sign in instead — or use “Forgot password?” if you've only used Google before.";
+      if (/invalid_credentials|Invalid login credentials/i.test(code)) return "That email and password don't match. If you usually use Google, sign in with Google or use “Forgot password?” to set a password.";
+      if (/email_not_confirmed|Email not confirmed/i.test(code)) return "Please confirm your email first — check your inbox for the link from Glow by Grace.";
+      if (/weak_password|Password should/i.test(code)) return "Please choose a stronger password — at least 8 characters.";
+      if (/over_email_send_rate_limit|rate limit|too many/i.test(code)) return "Too many emails sent just now. Please wait a few minutes and try again.";
+      if (/validation_failed|invalid.*email|Unable to validate email/i.test(code)) return "Please enter a valid email address.";
+      if (/same_password|different from the old/i.test(code)) return "Your new password must be different from your current one.";
+      return (err && err.message) || "Something went wrong. Please try again.";
+    },
+
     async signOut() {
       if (sb) await sb.auth.signOut();
     },
