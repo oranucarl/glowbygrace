@@ -8,6 +8,6 @@
    Never put Paystack / Resend secret keys in this file.
    ========================================================= */
 window.GBG_CONFIG = {
-  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
-  supabaseAnonKey: "YOUR-SUPABASE-ANON-KEY"
+  supabaseUrl: "https://kayatzmitpwuhntmukeu.supabase.co",
+  supabaseAnonKey: "sb_publishable_xislP4Kzh-WQgcpWxpcU6A_VKMhA-xU"
 };
