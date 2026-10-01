@@ -33,7 +33,9 @@ Work through the steps in order. You'll collect these values along the way:
 
 1. [console.cloud.google.com](https://console.cloud.google.com) → create a project (e.g. *Glow by Grace*).
 2. **APIs & Services → OAuth consent screen** → *External*. Fill in app name, support email and logo.
-   Under **Authorized domains** add `supabase.co` (and your own domain if you have one).
+   On **Branding**, set the home page, privacy policy (`/privacy.html`) and terms (`/terms.html`) links, and under
+   **Authorized domains** add `YOUR-PROJECT-REF.supabase.co` and your site's domain (e.g. `glowbygrace.vercel.app`).
+   Plain `supabase.co` is rejected — it's a public suffix.
 3. **Credentials → Create credentials → OAuth client ID** → *Web application*.
    - **Authorized redirect URI:** `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`
 4. Copy the **Client ID** and **Client secret** into Supabase → **Authentication → Sign In / Providers → Google** → enable → save.
