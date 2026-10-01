@@ -290,8 +290,10 @@
     return `
       <article class="product-card reveal${out ? " sold-out" : ""}" data-id="${p.id}">
         <div class="product-media" data-quick="${p.id}" role="button" tabindex="0" aria-label="View ${p.name}">
-          ${tag ? `<span class="tag">${tag}</span>` : ""}
-          <span class="swap-hint"><span class="h">Hover to see hair</span><span class="t">Tap to see hair</span></span>
+          <span class="media-top">
+            ${tag ? `<span class="tag" title="${tag}">${tag}</span>` : ""}
+            <span class="swap-hint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span class="h">Hover to see hair</span><span class="t">Tap to see hair</span></span>
+          </span>
           <img class="img-model" src="${p.model}" alt="${p.name} worn by a model" loading="lazy">
           <img class="img-sample" src="${p.sample}" alt="${p.name} hair close-up" loading="lazy">
           <span class="product-actions">

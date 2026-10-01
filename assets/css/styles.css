@@ -433,10 +433,23 @@ section { position: relative; }
 .product-card:hover .img-sample,
 .product-card.show-sample .img-sample { opacity: 1; transform: scale(1); }
 
-.product-media .tag {
+/* badge (left) and "see hair" hint (right) share one row so they can never overlap */
+.product-media { container-type: inline-size; }
+.media-top {
   position: absolute;
-  top: 14px; left: 14px;
+  top: 12px; left: 12px; right: 12px;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.product-media .tag {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 6px 12px;
   border-radius: 999px;
   background: var(--cream);
@@ -446,9 +459,12 @@ section { position: relative; }
   text-transform: uppercase;
 }
 .product-media .swap-hint {
-  position: absolute;
-  top: 14px; right: 14px;
-  z-index: 2;
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
   padding: 6px 10px;
   border-radius: 999px;
   background: rgba(23,15,11,.55);
@@ -461,6 +477,14 @@ section { position: relative; }
   transition: opacity .3s;
 }
 .product-card:hover .swap-hint { opacity: 0; }
+.swap-hint svg { width: 13px; height: 13px; flex: none; }
+/* narrow cards (phones): the hint becomes a small icon */
+@container (max-width: 280px) {
+  .media-top { top: 10px; left: 10px; right: 10px; }
+  .product-media .tag { padding: 5px 10px; font-size: .58rem; letter-spacing: .12em; }
+  .product-media .swap-hint { width: 28px; height: 28px; padding: 0; justify-content: center; }
+  .product-media .swap-hint .h, .product-media .swap-hint .t { display: none !important; }
+}
 .product-actions {
   position: absolute;
   left: 12px; right: 12px; bottom: 12px;
