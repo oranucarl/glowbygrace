@@ -46,8 +46,6 @@
         <section class="card co-signin auth-card">
           <h3>${opts.title || "Sign in"}</h3>
           ${opts.text ? `<p>${opts.text}</p>` : ""}
-          <button type="button" class="btn btn-google auth-google" data-google>${ICON.google} Continue with Google</button>
-          <div class="auth-or"><span>or use your email</span></div>
           ${mode === "forgot" ? "" : `
           <div class="auth-tabs" role="tablist">
             <button type="button" role="tab" data-mode="signin" class="${mode === "signin" ? "active" : ""}" aria-selected="${mode === "signin"}">Sign in</button>
@@ -55,6 +53,9 @@
           </div>`}
           ${notice ? `<div class="auth-notice ${notice.tone || ""}">${notice.html}</div>` : ""}
           <form class="auth-form" data-auth-form novalidate>${forms[mode]}</form>
+          ${mode === "forgot" ? "" : `
+          <div class="auth-or"><span>or</span></div>
+          <button type="button" class="btn btn-google auth-google" data-google>${ICON.google} Continue with Google</button>`}
         </section>`;
       const first = el.querySelector(`.auth-form input[name="${mode === "signup" ? "name" : email ? "password" : "email"}"]`);
       if (first && notice !== undefined) first.focus({ preventScroll: true });

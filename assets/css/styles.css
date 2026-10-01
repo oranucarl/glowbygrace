@@ -1306,7 +1306,7 @@ section.order-card .o-meta { margin-bottom: 22px; }
 .auth-card { display: grid; gap: 0; }
 .auth-card > h3 { margin-bottom: 8px; }
 .auth-google { width: 100%; justify-content: center; }
-.auth-or { display: flex; align-items: center; gap: 12px; margin: 20px 0 16px; color: var(--muted); font-size: .78rem; font-weight: 600; }
+.auth-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font-size: .78rem; font-weight: 600; }
 .auth-or::before, .auth-or::after { content: ""; flex: 1; height: 1px; background: rgba(107,70,54,.18); }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--cream); border-radius: 999px; padding: 4px; margin-bottom: 16px; }
 .auth-tabs button { padding: 10px; border-radius: 999px; font-weight: 800; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); transition: background .2s, color .2s; }

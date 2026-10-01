@@ -19,7 +19,7 @@
       <div class="auth-center" data-auth></div>`;
     window.GBG_AUTH.render(root.querySelector("[data-auth]"), {
       title: "Sign in to see your orders",
-      text: "Track deliveries, view past orders and check out faster. New here? Create an account or continue with Google.",
+      text: "Track deliveries, view past orders and check out faster. New here? Create an account in seconds.",
       onSignedIn: () => {}
     });
   }
