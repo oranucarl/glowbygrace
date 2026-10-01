@@ -26,6 +26,8 @@ Work through the steps in order. You'll collect these values along the way:
    2. `supabase/migrations/20261001000001_seed_products.sql` (the starting catalogue — skip it if you'd rather add products yourself)
    3. `supabase/migrations/20261002000000_product_colours.sql` (optional colour choices per product)
    4. `supabase/migrations/20261002000001_zone_states.sql` (which states each delivery option covers)
+   5. `supabase/migrations/20261002000002_welcome_email.sql` (welcome email for new customers — see the
+      Vault secrets it needs at the top of the file)
 4. Make the seller an admin (use the Gmail address they'll sign in with):
    ```sql
    insert into public.admins (email) values ('seller@gmail.com');
@@ -74,9 +76,10 @@ supabase secrets set \
   EMAIL_FROM="Glow by Grace <orders@yourdomain.com>" \
   SELLER_EMAIL=seller@gmail.com \
   SITE_URL=https://glowbygrace.vercel.app \
-  ALLOWED_ORIGINS=http://localhost:8080
+  ALLOWED_ORIGINS=http://localhost:8080 \
+  WELCOME_HOOK_SECRET=<same random string as the welcome_hook_secret Vault secret>
 
-supabase functions deploy checkout verify-payment paystack-webhook
+supabase functions deploy checkout verify-payment paystack-webhook welcome-email
 ```
 
 - `SELLER_EMAIL` gets a copy of every paid order and is the reply-to address on customer emails.

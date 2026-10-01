@@ -211,3 +211,63 @@ export async function sendOrderEmails(order: Order) {
     }
   }
 }
+
+// ---- Welcome email (new accounts) ----
+function welcomeEmail(name: string) {
+  const first = esc((name || "").split(" ")[0] || "gorgeous");
+  const tile = (title: string, text: string, href: string, cta: string) => `
+    <td style="width:33%;padding:6px;vertical-align:top">
+      <div style="background:${C.cream};border-radius:14px;padding:16px 14px;height:100%">
+        <div style="font-family:Georgia,serif;font-size:17px;margin-bottom:6px">${title}</div>
+        <div style="font-size:13px;line-height:1.55;color:${C.muted};margin-bottom:10px">${text}</div>
+        <a href="${href}" style="font-size:12px;font-weight:700;color:${C.espresso};letter-spacing:1px;text-transform:uppercase">${cta} →</a>
+      </div>
+    </td>`;
+  const inner = `
+    <tr><td style="padding:30px 28px 6px">
+      <div style="font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:700;color:${C.gold}">Welcome</div>
+      <h1 style="font-family:Georgia,serif;font-weight:400;font-size:30px;margin:10px 0 10px">Welcome to the glow, ${first}! ✦</h1>
+      <p style="font-size:15px;line-height:1.65;color:${C.muted};margin:0">Your Glow by Grace account is ready. Premium human hair — bone straight, curls, waves, bobs and braids — hand-checked in Lagos before it reaches you.</p>
+    </td></tr>
+    <tr><td style="padding:18px 22px 0">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        ${tile("Shop the hair", "Wigs, bundles and closures in every length.", `${siteUrl()}/shop.html`, "Browse")}
+        ${tile("Ask Grace", "Our hair assistant finds your perfect unit by style and budget.", `${siteUrl()}/index.html`, "Chat")}
+        ${tile("Your account", "Track orders and save your delivery details.", `${siteUrl()}/account.html`, "Open")}
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:20px 28px 0">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.7">
+        <tr><td style="padding:2px 0">🚚 <b>Free delivery within Lagos</b> — same or next day</td></tr>
+        <tr><td style="padding:2px 0">🔒 <b>Secure checkout</b> — card, bank transfer or USSD via Paystack</td></tr>
+        <tr><td style="padding:2px 0">💬 <b>Real help</b> — WhatsApp us on 0814 398 5557</td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="padding:24px 28px 32px">
+      <a href="${siteUrl()}/shop.html" style="display:inline-block;background:${C.espresso};color:${C.cream};text-decoration:none;padding:14px 26px;border-radius:999px;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase">Start shopping</a>
+    </td></tr>`;
+  return layout("Welcome to Glow by Grace", inner).replace(
+    "Questions about your order? Reply to this email or WhatsApp us on 0814 398 5557.",
+    "Questions? Reply to this email or WhatsApp us on 0814 398 5557.",
+  );
+}
+
+export async function sendWelcomeEmail(user: { email: string; name: string }) {
+  const replyTo = Deno.env.get("SELLER_EMAIL");
+  await send({
+    to: [user.email],
+    subject: "Welcome to Glow by Grace ✦",
+    html: welcomeEmail(user.name),
+    text: `Welcome to Glow by Grace, ${(user.name || "").split(" ")[0] || "gorgeous"}!
+
+Your account is ready. Shop premium human hair at ${siteUrl()}/shop.html
+Track your orders any time at ${siteUrl()}/account.html
+
+- Free delivery within Lagos (same or next day)
+- Secure checkout with Paystack
+- Questions? WhatsApp 0814 398 5557
+
+Glow by Grace`,
+    ...(replyTo ? { reply_to: replyTo } : {}),
+  });
+}
