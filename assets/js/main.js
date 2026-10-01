@@ -290,8 +290,9 @@
         <div class="product-info">
           <div class="meta">${p.tagline}</div>
           <h3>${p.name}</h3>
-          <div class="price"><small>from</small>${naira(minPrice(p))}</div>
-          <div class="lengths">${p.lengths.map((l) => `<span${inStock(l) ? "" : ' class="out"'}>${l.len}</span>`).join("")}</div>
+          <div class="price" data-card-price><small>from</small>${naira(minPrice(p))}</div>
+          <div class="lengths" role="group" aria-label="Choose a length">${p.lengths.map((l, i) =>
+            `<button type="button" data-pick="${i}" aria-pressed="false"${inStock(l) ? "" : ' class="out" disabled title="Sold out"'}>${l.len}</button>`).join("")}</div>
         </div>
       </article>`;
   }
@@ -300,7 +301,8 @@
   function openQuick(id) {
     const p = byId(id);
     if (!p) return;
-    let sel = p.lengths.find(inStock) || p.lengths[0];
+    const cardLen = (document.querySelector(`.product-card[data-id="${CSS.escape(id)}"]`) || {}).dataset;
+    let sel = (cardLen && cardLen.len && p.lengths.find((l) => l.len === cardLen.len)) || p.lengths.find(inStock) || p.lengths[0];
     modal.innerHTML = `
       <button class="close-x" data-close aria-label="Close">${ICON.close}</button>
       <div class="modal-media">
@@ -355,13 +357,32 @@
 
   /* ---------- Global click delegation ---------- */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-add],[data-quick],[data-wa],[data-open-bag]");
+    const t = e.target.closest("[data-add],[data-quick],[data-wa],[data-open-bag],[data-pick]");
     if (!t) return;
-    if (t.dataset.add) { e.preventDefault(); e.stopPropagation(); addToBag(t.dataset.add); }
+    // length chosen on a product card (undefined = none picked yet)
+    const card = t.closest(".product-card");
+    const picked = card && card.dataset.len;
+    if (t.dataset.pick !== undefined && card) {
+      e.preventDefault();
+      const p = byId(card.dataset.id);
+      const l = p && p.lengths[+t.dataset.pick];
+      if (!l || !inStock(l)) return;
+      card.dataset.len = l.len;
+      card.querySelector("[data-card-price]").innerHTML = `${naira(l.price)} <small>· ${l.len}</small>`;
+      card.querySelectorAll("[data-pick]").forEach((b) => {
+        const on = b === t;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", on);
+      });
+    }
+    else if (t.dataset.add) { e.preventDefault(); e.stopPropagation(); addToBag(t.dataset.add, picked); }
     else if (t.dataset.wa) {
       e.preventDefault(); e.stopPropagation();
       const p = byId(t.dataset.wa);
-      window.open(waLink(`Hi Glow by Grace! I'm interested in the ${p.name} (from ${naira(minPrice(p))}). Is it available?`), "_blank", "noopener");
+      const l = picked && p.lengths.find((x) => x.len === picked);
+      window.open(waLink(l
+        ? `Hi Glow by Grace! I'm interested in the ${p.name} (${l.len}) — ${naira(l.price)}. Is it available?`
+        : `Hi Glow by Grace! I'm interested in the ${p.name} (from ${naira(minPrice(p))}). Is it available?`), "_blank", "noopener");
     }
     else if (t.dataset.quick) { e.preventDefault(); openQuick(t.dataset.quick); }
     else if (t.hasAttribute("data-open-bag")) { e.preventDefault(); openBag(); }
