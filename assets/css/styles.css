@@ -935,6 +935,7 @@ section { position: relative; }
 .quick button.wa { border-color: #1fae5b; color: #158a47; }
 .quick button.wa:hover { background: #1fae5b; color: #fff; }
 
+.chat-body > * { flex-shrink: 0; } /* stop scrolled-in card rows collapsing to 0 height */
 .recs { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; animation: pop .35s both; }
 .rec {
   flex: 0 0 168px;
@@ -951,6 +952,9 @@ section { position: relative; }
 .rec h5 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; line-height: 1.15; }
 .rec .p { font-size: .8rem; font-weight: 800; margin: 4px 0 8px; }
 .rec .p small { color: var(--muted); font-weight: 600; }
+.rec .ls { display: flex; flex-wrap: wrap; gap: 4px; margin: -2px 0 8px; }
+.rec .ls button { padding: 3px 7px; border-radius: 999px; border: 1px solid var(--cream-2); font-size: .66rem; font-weight: 700; background: transparent; color: var(--muted); }
+.rec .ls button.on { border-color: var(--espresso); background: var(--espresso); color: var(--cream); }
 .rec .rb { display: flex; gap: 6px; }
 .rec .rb button { flex: 1; padding: 7px 6px; border-radius: 999px; font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: var(--espresso); color: var(--cream); }
 .rec .rb button.ghost { background: var(--cream-2); color: var(--espresso); }

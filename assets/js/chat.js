@@ -148,7 +148,7 @@
       const wrap = document.createElement("div");
       wrap.className = "recs";
       list.forEach((p) => {
-        const fit = bestLength(p, budget);
+        let fit = bestLength(p, budget);
         const el = document.createElement("div");
         el.className = "rec";
         el.innerHTML = `
@@ -156,8 +156,16 @@
           <div class="t">
             <h5>${p.name}</h5>
             <div class="p">${naira(fit.price)} <small>· ${fit.len}</small></div>
+            <div class="ls">${p.lengths.map((l, i) => `<button type="button" data-l="${i}"${l === fit ? ' class="on"' : ""}>${l.len}</button>`).join("")}</div>
             <div class="rb"><button data-a>Add</button><button class="ghost" data-v>View</button></div>
           </div>`;
+        el.querySelectorAll("[data-l]").forEach((b) => {
+          b.onclick = () => {
+            fit = p.lengths[b.dataset.l];
+            el.querySelector(".p").innerHTML = `${naira(fit.price)} <small>· ${fit.len}</small>`;
+            el.querySelectorAll("[data-l]").forEach((x) => x.classList.toggle("on", x === b));
+          };
+        });
         el.querySelector("[data-a]").onclick = () => {
           addToBag(p.id, fit.len);
           if (!state.liked.includes(p.name)) state.liked.push(p.name);
