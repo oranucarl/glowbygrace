@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop Hair — Glow by Grace</title>
+  <meta name="description" content="Shop premium human hair wigs, bundles and closures from Glow by Grace. Bone straight, curly, wavy, bobs, braids and colour.">
+  <meta name="theme-color" content="#2a1a14">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400;1,6..96,500&family=Manrope:wght@400;500;600;700;800&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-page="shop">
+
+  <main>
+    <section class="shop-hero">
+      <div class="container reveal">
+        <div class="eyebrow">The Glow by Grace collection</div>
+        <h1 class="display">Shop the <em>glow</em></h1>
+        <p>Hover over any unit to see the hair up close. Can't decide? <a href="#" data-open-chat style="text-decoration:underline;font-weight:700;color:var(--espresso)">Ask Grace</a> to help you choose.</p>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="container">
+        <div class="chips" data-chips role="tablist" aria-label="Filter by style"></div>
+        <div class="selects">
+          <select class="select" data-price aria-label="Filter by price">
+            <option value="all">Any price</option>
+            <option value="0-80000">Under ₦80k</option>
+            <option value="80000-150000">₦80k – ₦150k</option>
+            <option value="150000-250000">₦150k – ₦250k</option>
+            <option value="250000-99999999">₦250k +</option>
+          </select>
+          <select class="select" data-sort aria-label="Sort products">
+            <option value="featured">Featured</option>
+            <option value="low">Price: low to high</option>
+            <option value="high">Price: high to low</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <section class="container" style="padding-bottom:80px">
+      <p class="result-count" data-count></p>
+      <div class="product-grid" data-grid></div>
+      <div class="empty" data-empty hidden>
+        <h3>Nothing here… yet</h3>
+        <p>Try another style or price — or let Grace find something for you.</p>
+        <p style="margin-top:20px"><button class="btn btn-dark" data-open-chat>Ask Grace</button></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/products.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/chat.js"></script>
+  <script src="assets/js/shop.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Local notes — never committed
+agent.md
+AGENT.md
+agents.md
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/
+
+# Local backups
+.local-backups/
