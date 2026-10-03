@@ -203,14 +203,15 @@
     if (!busy) pay(e.target);
   });
 
-  // keep the summary in sync when the bag drawer is edited
-  document.querySelector("[data-drawer]").addEventListener("click", () => setTimeout(() => {
-    if (busy) return;
+  // keep the summary in sync whenever the bag changes — in the drawer, another tab, or the mobile app
+  let started = false;
+  document.addEventListener("gbg:bag", () => {
+    if (!started || busy) return;
     const lines = bagLines();
     const aside = root.querySelector(".co-summary");
     if (!lines.length || !aside) render();
     else { aside.outerHTML = summary(lines); updatePay(); }
-  }));
+  });
 
   async function loadUser(u) {
     user = u;
@@ -224,6 +225,8 @@
 
   API.ready.then(async () => {
     if (API.catalogError) return render();
+    await window.GBG.cartReady;
+    started = true;
     await loadUser(await API.user());
     API.onAuth((u) => { if ((u && u.id) !== (user && user.id)) loadUser(u); });
   });

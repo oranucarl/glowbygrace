@@ -166,11 +166,63 @@
   });
   drawer.querySelector("[data-close]").addEventListener("click", closeAll);
 
-  /* ---------- Bag (saved in this browser only) ---------- */
+  /* ---------- Bag ----------
+     Guests: kept in this browser. Signed in: kept on the account (cart_items table)
+     and shared live with the mobile app through Supabase Realtime. */
   const BAG_KEY = "gbg-bag-v1";
-  let bag = [];
-  try { bag = JSON.parse(localStorage.getItem(BAG_KEY)) || []; } catch (e) { bag = []; }
-  const saveBag = () => { try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {} };
+  const readGuest = () => { try { return JSON.parse(localStorage.getItem(BAG_KEY)) || []; } catch (e) { return []; } };
+  const writeGuest = (b) => { try { localStorage.setItem(BAG_KEY, JSON.stringify(b)); } catch (e) {} };
+  let bag = readGuest(); // [{ id, len, color, qty }]
+  let cartUser = null; // signed-in user whose bag lives in the database
+  let channel = null;
+  const saveBag = () => { if (!cartUser) writeGuest(bag); };
+  const cartKeys = (l) => ({ product_id: l.id, length: l.len, color: l.color || "" });
+
+  async function loadAccountCart() {
+    if (!cartUser) return;
+    const { data, error } = await API.client.from("cart_items").select("*").order("created_at");
+    if (error) return console.error(error);
+    bag = data.map((r) => ({ id: r.product_id, len: r.length, color: r.color || null, qty: r.quantity }));
+    renderBag();
+  }
+  let refetchTimer;
+  const refetch = () => { clearTimeout(refetchTimer); refetchTimer = setTimeout(loadAccountCart, 150); };
+
+  // write to the account bag; the realtime echo (or this refetch) brings every device in line
+  async function persist(run) {
+    try {
+      const { error } = await run();
+      if (error) throw error;
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't update your bag — please try again");
+    }
+    refetch();
+  }
+
+  async function useAccountCart(user) {
+    if ((user && user.id) === (cartUser && cartUser.id)) return;
+    if (channel) { API.client.removeChannel(channel); channel = null; }
+    cartUser = user || null;
+    if (!cartUser) { bag = readGuest(); renderBag(); return; }
+    // anything added while signed out moves into the account bag
+    const guest = readGuest();
+    for (const l of guest) {
+      await API.client.rpc("add_to_cart", { p_product_id: l.id, p_length: l.len, p_color: l.color || "", p_quantity: l.qty });
+    }
+    if (guest.length) writeGuest([]);
+    await loadAccountCart();
+    channel = API.client
+      .channel(`cart-${cartUser.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cart_items", filter: `user_id=eq.${cartUser.id}` }, refetch)
+      // delete events can't be filtered by user, so any delete triggers a (cheap, RLS-protected) refetch
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "cart_items" }, refetch)
+      .subscribe();
+  }
+  // one switch at a time, so sign-in events arriving together don't merge the guest bag twice
+  let cartSwitch = Promise.resolve();
+  const setCartUser = (user) => (cartSwitch = cartSwitch.then(() => useAccountCart(user)).catch(console.error));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refetch(); });
 
   // how many of one length are already in the bag (across colours) — stock is per length
   const inBagQty = (id, len) => bag.filter((l) => l.id === id && l.len === len).reduce((s, l) => s + l.qty, 0);
@@ -193,6 +245,7 @@
     else bag.push({ id, len, color, qty });
     saveBag();
     renderBag();
+    if (cartUser) persist(() => API.client.rpc("add_to_cart", { p_product_id: id, p_length: len, p_color: color || "", p_quantity: qty }));
     toast(`${p.name} (${optionLabel(len, color)}) added to your bag ✦`);
     return true;
   }
@@ -211,6 +264,7 @@
 
   function renderBag() {
     const lines = bagLines();
+    document.dispatchEvent(new CustomEvent("gbg:bag"));
     const count = lines.reduce((s, l) => s + l.qty, 0);
     document.querySelectorAll("[data-bag-count]").forEach((el) => {
       el.textContent = count;
@@ -250,6 +304,7 @@
     bag = [];
     saveBag();
     renderBag();
+    if (cartUser) persist(() => API.client.from("cart_items").delete().eq("user_id", cartUser.id));
   }
 
   function orderMessage(lines, total) {
@@ -271,9 +326,15 @@
       real.qty++;
     }
     if (dec !== undefined) real.qty = Math.max(0, real.qty - 1);
-    if (rm !== undefined || real.qty === 0) bag = bag.filter((l) => l !== real);
+    const removed = rm !== undefined || real.qty === 0;
+    if (removed) bag = bag.filter((l) => l !== real);
     saveBag();
     renderBag();
+    if (cartUser) {
+      persist(() => removed
+        ? API.client.from("cart_items").delete().match(cartKeys(real))
+        : API.client.from("cart_items").update({ quantity: real.qty }).match(cartKeys(real)));
+    }
   });
 
   function openBag() {
@@ -520,7 +581,11 @@
   window.GBG.toast = toast;
 
   renderBag();
-  API.ready.then(renderBag);
+  window.GBG.cartReady = API.ready.then(async () => {
+    await setCartUser(API.configured ? await API.user() : null);
+    renderBag();
+  });
+  API.onAuth((user) => setCartUser(user));
   document.addEventListener("DOMContentLoaded", () => observeReveals());
   observeReveals();
 })();

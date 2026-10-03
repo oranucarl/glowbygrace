@@ -163,7 +163,10 @@ Deno.serve(handle(async (req) => {
   }
 
   try {
-    return json(await startPayment(order, returnUrl));
+    const payment = await startPayment(order, returnUrl);
+    // the account bag has become this order — empty it (the website and app update live)
+    await db.from("cart_items").delete().eq("user_id", user.id);
+    return json(payment);
   } catch (err) {
     // don't leave an orphan order behind if Paystack couldn't start the payment
     await db.from("orders").delete().eq("id", order.id);
