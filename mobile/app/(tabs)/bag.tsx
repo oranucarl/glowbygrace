@@ -16,7 +16,7 @@ export default function Bag() {
     return (
       <View style={s.empty}>
         <Text style={s.h2}>Your bag</Text>
-        <Text style={s.muted}>Sign in with your Glow by Grace account to see your bag. It's the same bag as on the website.</Text>
+        <Text style={s.muted}>Sign in to see your bag.</Text>
         <Button title="Sign in" onPress={() => router.push('/account')} style={{ alignSelf: 'stretch' }} />
       </View>
     );
@@ -38,16 +38,10 @@ export default function Bag() {
       keyExtractor={(r) => `${r.l.productId}|${r.l.length}|${r.l.color || ''}`}
       contentContainerStyle={{ padding: 16, gap: 12, flexGrow: 1 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={cart.refresh} tintColor={C.espresso} />}
-      ListHeaderComponent={
-        <View style={s.live}>
-          <View style={s.dot} />
-          <Text style={s.liveText}>Synced with your website bag</Text>
-        </View>
-      }
       ListEmptyComponent={
         <View style={[s.empty, { flex: 0, paddingTop: 40 }]}>
           <Text style={s.h2}>Your bag is empty</Text>
-          <Text style={s.muted}>Add something on the website or in the app — it shows up here instantly.</Text>
+          <Text style={s.muted}>Find a unit you love and add it to your bag.</Text>
           <Button title="Shop the hair" onPress={() => router.navigate('/shop')} variant="ghost" style={{ alignSelf: 'stretch' }} />
         </View>
       }
@@ -91,9 +85,6 @@ const s = StyleSheet.create({
   h2: { fontFamily: F.display, fontSize: 28, color: C.espresso, textAlign: 'center' },
   muted: { fontFamily: F.body, fontSize: 13, color: C.muted, lineHeight: 19, textAlign: 'left' },
   err: { fontFamily: F.bodyBold, fontSize: 12, color: C.error },
-  live: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', backgroundColor: '#eef8f1', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3ccf7a' },
-  liveText: { fontFamily: F.bodyBold, fontSize: 12, color: C.ok },
   line: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', padding: 12 },
   img: { width: 70, height: 88, borderRadius: 12, backgroundColor: C.cream2 },
   name: { fontFamily: F.display, fontSize: 18, color: C.espresso },
