@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link, useFocusEffect } from 'expo-router';
 import { authMessage, displayName, useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
@@ -14,8 +15,22 @@ export default function Account() {
   return user ? <SignedIn /> : <SignInForm />;
 }
 
+const GoogleG = () => <Ionicons name="logo-google" size={18} color="#4285F4" />;
+
 function SignInForm() {
-  const { signIn, signUp, sendReset } = useAuth();
+  const { signIn, signUp, sendReset, signInWithGoogle } = useAuth();
+  const [gBusy, setGBusy] = useState(false);
+  async function google() {
+    setGBusy(true);
+    setNote(null);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setNote({ tone: 'err', text: authMessage(err) });
+    } finally {
+      setGBusy(false);
+    }
+  }
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -59,7 +74,7 @@ function SignInForm() {
           <Text style={s.h1}>
             Welcome <Text style={{ fontFamily: F.displayItalic }}>back</Text>
           </Text>
-          <Text style={s.muted}>Use the same account as the website — your bag and orders are shared.</Text>
+          <Text style={s.muted}>Use the same account as the website (Google or email) — your bag and orders are shared.</Text>
         </View>
         <Card style={{ gap: 14 }}>
           {mode !== 'forgot' ? (
@@ -102,11 +117,16 @@ function SignInForm() {
             <Pressable onPress={() => { setMode('signin'); setNote(null); }} style={{ alignSelf: 'center' }}>
               <Text style={s.link}>Back to sign in</Text>
             </Pressable>
-          ) : null}
+          ) : (
+            <>
+              <View style={s.or}><View style={s.orLine} /><Text style={s.orText}>or</Text><View style={s.orLine} /></View>
+              <Pressable onPress={gBusy ? undefined : google} style={[s.google, gBusy && { opacity: 0.6 }]} accessibilityRole="button">
+                <GoogleG />
+                <Text style={s.googleText}>{gBusy ? 'Opening Google…' : 'Continue with Google'}</Text>
+              </Pressable>
+            </>
+          )}
         </Card>
-        <Text style={[s.muted, { textAlign: 'center' }]}>
-          Usually sign in with Google on the website? Add a password there under Account → My details, then sign in here with your email.
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -178,6 +198,11 @@ const s = StyleSheet.create({
   tabOn: { backgroundColor: C.white },
   tabText: { fontFamily: F.bodyHeavy, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: C.muted },
   link: { fontFamily: F.bodyBold, fontSize: 13, color: C.muted, textDecorationLine: 'underline' },
+  or: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  orLine: { flex: 1, height: 1, backgroundColor: 'rgba(107,70,54,0.18)' },
+  orText: { fontFamily: F.bodyBold, fontSize: 12, color: C.muted },
+  google: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 52, borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(107,70,54,0.25)', backgroundColor: C.white },
+  googleText: { fontFamily: F.bodyBold, fontSize: 15, color: C.espresso },
   show: { position: 'absolute', right: 14, top: 38 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatar: { width: 64, height: 64, borderRadius: 32 },

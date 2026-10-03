@@ -40,6 +40,7 @@ export default function RootLayout() {
           <Stack.Screen name="product/[id]" options={{ title: '' }} />
           <Stack.Screen name="checkout" options={{ title: 'Checkout' }} />
           <Stack.Screen name="order/[id]" options={{ title: 'Your order' }} />
+          <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
         </Stack>
       </CartProvider>
     </AuthProvider>
