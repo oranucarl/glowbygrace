@@ -85,7 +85,7 @@ function SignInForm() {
               ))}
             </View>
           ) : (
-            <Text style={s.muted}>Enter your email and we'll send a link to set a new password. This also works if you've only signed in with Google on the website.</Text>
+            <Text style={s.muted}>Enter your email and we'll send you a link to set a new password.</Text>
           )}
           {note ? <Notice tone={note.tone}>{note.text}</Notice> : null}
           {mode === 'signup' ? <Field label="Full name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" /> : null}
@@ -161,7 +161,7 @@ function SignedIn() {
 
       <Text style={s.section}>My orders</Text>
       {orders === null ? <Text style={s.muted}>Loading…</Text> : null}
-      {orders && !orders.length ? <Text style={s.muted}>No orders yet — when you check out on the website or in the app, they'll appear here.</Text> : null}
+      {orders && !orders.length ? <Text style={s.muted}>No orders yet — when you place an order, it will appear here.</Text> : null}
       {orders?.map((o) => (
         <Link key={o.id} href={{ pathname: '/order/[id]', params: { id: o.id } }} asChild>
           <Pressable>

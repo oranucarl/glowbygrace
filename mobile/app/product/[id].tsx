@@ -50,7 +50,7 @@ export default function ProductScreen() {
 
   async function add() {
     if (!user) {
-      Alert.alert('Sign in to shop', 'Sign in with the same account you use on the website — your bag is shared between both.', [
+      Alert.alert('Sign in to shop', 'Sign in to add items to your bag.', [
         { text: 'Not now', style: 'cancel' },
         { text: 'Sign in', onPress: () => router.push('/account') },
       ]);
@@ -139,7 +139,7 @@ export default function ProductScreen() {
           </View>
 
           <Button title={label} onPress={add} disabled={!ready} busy={busy} />
-          {!user ? <Text style={s.hint}>Sign in with your website account to add to your bag.</Text> : null}
+          {!user ? <Text style={s.hint}>Sign in to add to your bag.</Text> : null}
         </View>
       </ScrollView>
     </>
