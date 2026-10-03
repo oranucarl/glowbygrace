@@ -1,8 +1,11 @@
 // Home — the app version of the website's landing page.
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useEvent } from 'expo';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCatalog } from '../../lib/catalog';
 import { C, F } from '../../lib/theme';
 import { Button, Eyebrow } from '../../components/ui';
@@ -12,6 +15,8 @@ const U = (id: string, w = 900) => `https://images.unsplash.com/${id}?auto=forma
 
 // same photos as the website's home page
 const HERO = U('photo-1551524267-c0baf940832c', 1100);
+// the website's hero clip (mobile version)
+const HERO_VIDEO = 'https://cdn.shopify.com/s/files/1/1819/4549/files/mobile-video.mp4?v=1629207844';
 const STYLES = [
   { cat: 'straight', label: 'Bone straight', img: U('photo-1551524267-c0baf940832c', 700) },
   { cat: 'curly', label: 'Curly', img: U('photo-1585890483046-9461ebc1dace', 700) },
@@ -41,12 +46,32 @@ export default function Home() {
   const featured = (products.filter((p) => p.featured).length ? products.filter((p) => p.featured) : products).slice(0, 4);
   const cardW = (width - 16 * 2 - 12) / 2;
   const goShop = (cat?: string) => router.navigate({ pathname: '/shop', params: cat ? { cat } : {} });
+  const heroH = Math.min(width * 1.25, 620);
+
+  // muted looping hero video; the photo shows until the first frame plays
+  const player = useVideoPlayer(HERO_VIDEO, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const [heroVisible, setHeroVisible] = useState(true);
+  const [focused, setFocused] = useState(true);
+  // pause when another tab is open or the hero is scrolled away (saves data and battery)
+  useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
+  const shouldPlay = focused && heroVisible;
+  useEffect(() => {
+    if (shouldPlay) player.play();
+    else player.pause();
+  }, [shouldPlay, player]);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setHeroVisible(e.nativeEvent.contentOffset.y < heroH * 0.8);
 
   return (
-    <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refresh(true)} tintColor={C.espresso} />}>
+    <ScrollView onScroll={onScroll} scrollEventThrottle={64} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refresh(true)} tintColor={C.espresso} />}>
       {/* hero */}
-      <View style={{ height: Math.min(width * 1.25, 620) }}>
+      <View style={{ height: heroH }}>
         <Image source={HERO} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
+        <VideoView player={player} style={[StyleSheet.absoluteFill, { opacity: isPlaying ? 1 : 0 }]} contentFit="cover" nativeControls={false} />
         <LinearGradient colors={['rgba(23,15,11,0.05)', 'rgba(23,15,11,0.75)']} style={StyleSheet.absoluteFill} />
         <View style={s.heroBody}>
           <Text style={s.heroTitle}>
