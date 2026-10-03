@@ -24,7 +24,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="shop"
-        options={{ title: 'Shop', headerTitle: 'Glow by Grace', tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" color={color} size={size} /> }}
+        options={{ title: 'Shop', headerTitle: 'Glow by Grace', tabBarIcon: ({ color, size }) => <Ionicons name="cart-outline" color={color} size={size} /> }}
       />
       <Tabs.Screen
         name="bag"
