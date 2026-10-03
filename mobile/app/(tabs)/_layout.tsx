@@ -20,6 +20,10 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
+        options={{ title: 'Home', headerShown: false, tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} /> }}
+      />
+      <Tabs.Screen
+        name="shop"
         options={{ title: 'Shop', headerTitle: 'Glow by Grace', tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" color={color} size={size} /> }}
       />
       <Tabs.Screen

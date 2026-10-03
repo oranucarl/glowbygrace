@@ -48,7 +48,7 @@ export default function Bag() {
         <View style={[s.empty, { flex: 0, paddingTop: 40 }]}>
           <Text style={s.h2}>Your bag is empty</Text>
           <Text style={s.muted}>Add something on the website or in the app — it shows up here instantly.</Text>
-          <Button title="Shop the hair" onPress={() => router.push('/')} variant="ghost" style={{ alignSelf: 'stretch' }} />
+          <Button title="Shop the hair" onPress={() => router.navigate('/shop')} variant="ghost" style={{ alignSelf: 'stretch' }} />
         </View>
       }
       renderItem={({ item: { l, p, v } }) => (

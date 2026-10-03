@@ -71,7 +71,7 @@ export default function Checkout() {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 }}>
         <Text style={s.h2}>Your bag is empty</Text>
-        <Button title="Shop the hair" variant="ghost" onPress={() => router.replace('/')} style={{ alignSelf: 'stretch' }} />
+        <Button title="Shop the hair" variant="ghost" onPress={() => router.navigate('/shop')} style={{ alignSelf: 'stretch' }} />
       </View>
     );
   }

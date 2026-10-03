@@ -1,89 +1,141 @@
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+// Home — the app version of the website's landing page.
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
-import { CATEGORIES, minPrice, soldOut, useCatalog, type Product } from '../../lib/catalog';
-import { C, F, naira } from '../../lib/theme';
-import { Eyebrow } from '../../components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useCatalog } from '../../lib/catalog';
+import { C, F } from '../../lib/theme';
+import { Button, Eyebrow } from '../../components/ui';
+import { ProductCard } from '../../components/ProductCard';
 
-export default function Shop() {
-  const { products, loading, error, refresh } = useCatalog();
-  const [cat, setCat] = useState('all');
+const U = (id: string, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=75`;
+
+// same photos as the website's home page
+const HERO = U('photo-1551524267-c0baf940832c', 1100);
+const STYLES = [
+  { cat: 'straight', label: 'Bone straight', img: U('photo-1551524267-c0baf940832c', 700) },
+  { cat: 'curly', label: 'Curly', img: U('photo-1585890483046-9461ebc1dace', 700) },
+  { cat: 'bob', label: 'Bobs', img: U('photo-1648827966041-f773128fc993', 700) },
+  { cat: 'braids', label: 'Braids', img: U('photo-1613099084406-4b9140fc780a', 700) },
+  { cat: 'wavy', label: 'Waves', img: U('photo-1632984814154-6e07a671ae58', 700) },
+];
+const MARQUEE = ['100% human hair', 'Bone straight', 'Glueless HD lace', 'Same-day Lagos delivery', 'Pre-plucked hairlines'];
+const DIFFERENCE = [
+  ['Premium human hair', 'Double drawn, cuticle-aligned hair that stays soft, tangle-free and full from root to tip.'],
+  ['Invisible HD lace', 'Pre-plucked hairlines and bleached knots that melt into every skin tone.'],
+  ['Glueless & ready to wear', 'Pre-cut lace and adjustable bands — wear it in minutes, no glue, no stress.'],
+  ['Real people, real help', 'Not sure what to pick? Chat with us on WhatsApp anytime.'],
+];
+const LOOKBOOK = [
+  'photo-1508002366005-75a695ee2d17',
+  'photo-1656473040206-53753fbbc767',
+  'photo-1581341038810-5a2fa5b18f6e',
+  'photo-1696622049200-3512d97e3258',
+  'photo-1762745101365-1dbc90b98007',
+  'photo-1656473014073-ae696e9e4349',
+].map((id) => U(id, 500));
+
+export default function Home() {
+  const { products, loading, refresh } = useCatalog();
   const { width } = useWindowDimensions();
-  const cols = width >= 700 ? 3 : 2;
-  const cardW = (width - 16 * 2 - 12 * (cols - 1)) / cols;
-
-  const cats = useMemo(() => CATEGORIES.filter((c) => c.key === 'all' || products.some((p) => p.category === c.key)), [products]);
-  const list = useMemo(() => products.filter((p) => cat === 'all' || p.category === cat), [products, cat]);
+  const featured = (products.filter((p) => p.featured).length ? products.filter((p) => p.featured) : products).slice(0, 4);
+  const cardW = (width - 16 * 2 - 12) / 2;
+  const goShop = (cat?: string) => router.navigate({ pathname: '/shop', params: cat ? { cat } : {} });
 
   return (
-    <FlatList
-      key={cols}
-      data={list}
-      numColumns={cols}
-      keyExtractor={(p) => p.id}
-      contentContainerStyle={{ padding: 16, gap: 18 }}
-      columnWrapperStyle={{ gap: 12 }}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refresh(true)} tintColor={C.espresso} />}
-      ListHeaderComponent={
-        <View style={{ gap: 14 }}>
-          <View>
-            <Eyebrow>The collection</Eyebrow>
-            <Text style={s.h1}>
-              Shop the <Text style={{ fontFamily: F.displayItalic }}>glow</Text>
-            </Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {cats.map((c) => (
-              <Pressable key={c.key} onPress={() => setCat(c.key)} style={[s.cat, cat === c.key && s.catOn]} accessibilityRole="tab" accessibilityState={{ selected: cat === c.key }}>
-                <Text style={[s.catText, cat === c.key && { color: C.cream }]}>{c.label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-          {error ? <Text style={s.note}>{error}</Text> : null}
-          {!loading && !error ? <Text style={s.note}>{list.length} {list.length === 1 ? 'style' : 'styles'}</Text> : null}
+    <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refresh(true)} tintColor={C.espresso} />}>
+      {/* hero */}
+      <View style={{ height: Math.min(width * 1.25, 620) }}>
+        <Image source={HERO} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
+        <LinearGradient colors={['rgba(23,15,11,0.05)', 'rgba(23,15,11,0.75)']} style={StyleSheet.absoluteFill} />
+        <View style={s.heroBody}>
+          <Text style={s.heroTitle}>
+            Glow<Text style={s.heroBy}> by </Text>
+            <Text style={{ fontFamily: F.displayItalic }}>Grace.</Text>
+          </Text>
+          <Text style={s.heroText}>Luxury human hair for the woman who walks in and owns the room — hand-picked in Lagos.</Text>
+          <Button title="Shop the hair" variant="gold" onPress={() => goShop()} style={{ alignSelf: 'flex-start', paddingHorizontal: 28 }} />
         </View>
-      }
-      renderItem={({ item }) => <ProductCard p={item} width={cardW} />}
-    />
-  );
-}
+      </View>
 
-function ProductCard({ p, width }: { p: Product; width: number }) {
-  const out = soldOut(p);
-  const tag = out ? 'Sold out' : p.badge;
-  return (
-    <Link href={{ pathname: '/product/[id]', params: { id: p.id } }} asChild>
-      <Pressable style={{ width }} accessibilityLabel={`${p.name}, from ${naira(minPrice(p))}`}>
-        <View style={[s.media, { height: width * 1.3 }]}>
-          <Image source={p.model} style={[StyleSheet.absoluteFill, out && { opacity: 0.6 }]} contentFit="cover" transition={200} />
-          {tag ? (
-            <View style={s.tag}>
-              <Text style={s.tagText} numberOfLines={1}>{tag}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.marquee} contentContainerStyle={{ gap: 22, paddingHorizontal: 16 }}>
+        {MARQUEE.map((m) => <Text key={m} style={s.marqueeText}>{m} ✦</Text>)}
+      </ScrollView>
+
+      {/* shop by style */}
+      <View style={s.section}>
+        <Eyebrow>Shop by style</Eyebrow>
+        <Text style={s.h2}>Pick your <Text style={{ fontFamily: F.displayItalic }}>era.</Text></Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingLeft: 16, marginTop: 14 }}>
+          {STYLES.map((t) => (
+            <Pressable key={t.cat} onPress={() => goShop(t.cat)} style={s.tile} accessibilityRole="button" accessibilityLabel={`Shop ${t.label}`}>
+              <Image source={t.img} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              <LinearGradient colors={['transparent', 'rgba(23,15,11,0.7)']} style={StyleSheet.absoluteFill} />
+              <Text style={s.tileText}>{t.label} ↗</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* bestsellers */}
+      <View style={s.section}>
+        <Eyebrow>Loved by our queens</Eyebrow>
+        <Text style={s.h2}>The <Text style={{ fontFamily: F.displayItalic }}>bestsellers</Text></Text>
+        <Text style={s.muted}>Press and hold a photo to see the hair up close.</Text>
+        <View style={s.grid}>
+          {featured.map((p) => <ProductCard key={p.id} p={p} width={cardW} />)}
+        </View>
+        <Button title="View all hair" variant="ghost" onPress={() => goShop()} style={{ marginTop: 20 }} />
+      </View>
+
+      {/* the Grace difference */}
+      <View style={[s.section, { backgroundColor: C.cream2, marginTop: 28, paddingBottom: 28 }]}>
+        <Eyebrow>The Grace difference</Eyebrow>
+        <Text style={s.h2}>Hair that <Text style={{ fontFamily: F.displayItalic }}>loves</Text> you back.</Text>
+        <Text style={s.muted}>Every unit is inspected strand by strand before it reaches you.</Text>
+        <View style={{ gap: 16, marginTop: 16 }}>
+          {DIFFERENCE.map(([t, d], i) => (
+            <View key={t} style={s.diff}>
+              <Text style={s.diffNo}>0{i + 1}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.diffTitle}>{t}</Text>
+                <Text style={s.muted}>{d}</Text>
+              </View>
             </View>
-          ) : null}
+          ))}
         </View>
-        <Text style={s.meta} numberOfLines={1}>{p.tagline}</Text>
-        <Text style={s.name} numberOfLines={2}>{p.name}</Text>
-        <Text style={s.price}>
-          <Text style={{ color: C.muted, fontFamily: F.body }}>from </Text>
-          {naira(minPrice(p))}
-        </Text>
-      </Pressable>
-    </Link>
+      </View>
+
+      {/* lookbook */}
+      <View style={[s.section, { paddingBottom: 32 }]}>
+        <Eyebrow>#GlowByGrace</Eyebrow>
+        <Text style={s.h2}>Worn by <Text style={{ fontFamily: F.displayItalic }}>queens</Text></Text>
+        <View style={[s.grid, { gap: 8 }]}>
+          {LOOKBOOK.map((src) => (
+            <Pressable key={src} onPress={() => goShop()} style={{ width: (width - 32 - 8) / 2, height: (width - 40) / 2 * 1.2, borderRadius: 16, overflow: 'hidden' }}>
+              <Image source={src} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  h1: { fontFamily: F.display, fontSize: 40, color: C.espresso, marginTop: 4 },
-  cat: { paddingVertical: 9, paddingHorizontal: 15, borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(107,70,54,0.22)' },
-  catOn: { backgroundColor: C.espresso, borderColor: C.espresso },
-  catText: { fontFamily: F.bodyBold, fontSize: 13, color: C.espresso },
-  note: { fontFamily: F.body, color: C.muted, fontSize: 13 },
-  media: { borderRadius: 20, overflow: 'hidden', backgroundColor: C.cream2 },
-  tag: { position: 'absolute', top: 10, left: 10, maxWidth: '85%', backgroundColor: C.cream, borderRadius: 999, paddingVertical: 5, paddingHorizontal: 10 },
-  tagText: { fontFamily: F.bodyHeavy, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.espresso },
-  meta: { fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.muted, marginTop: 10 },
-  name: { fontFamily: F.display, fontSize: 19, color: C.espresso, marginTop: 3 },
-  price: { fontFamily: F.bodyHeavy, fontSize: 14, color: C.espresso, marginTop: 3 },
+  heroBody: { position: 'absolute', left: 20, right: 20, bottom: 28, gap: 12 },
+  heroTitle: { fontFamily: F.display, fontSize: 54, lineHeight: 58, color: C.cream },
+  heroBy: { fontFamily: 'Manrope_500Medium', fontSize: 22, color: C.gold2 },
+  heroText: { fontFamily: F.body, fontSize: 15, lineHeight: 23, color: 'rgba(247,240,231,0.92)', maxWidth: 340 },
+  marquee: { backgroundColor: C.espresso, paddingVertical: 12, flexGrow: 0 },
+  marqueeText: { fontFamily: F.bodyBold, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase', color: C.cream },
+  section: { paddingHorizontal: 16, paddingTop: 28 },
+  h2: { fontFamily: F.display, fontSize: 34, color: C.espresso, marginTop: 6 },
+  muted: { fontFamily: F.body, fontSize: 14, lineHeight: 21, color: C.muted, marginTop: 6 },
+  tile: { width: 150, height: 200, borderRadius: 18, overflow: 'hidden', justifyContent: 'flex-end', padding: 12 },
+  tileText: { fontFamily: F.bodyHeavy, fontSize: 14, color: C.cream },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },
+  diff: { flexDirection: 'row', gap: 14 },
+  diffNo: { fontFamily: F.display, fontSize: 22, color: C.gold },
+  diffTitle: { fontFamily: F.display, fontSize: 20, color: C.espresso },
 });

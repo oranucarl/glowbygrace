@@ -159,7 +159,7 @@ export default function OrderScreen() {
           </>
         ) : null}
       </Card>
-      <Button title="Back to shop" variant="ghost" onPress={() => router.replace('/')} />
+      <Button title="Back to shop" variant="ghost" onPress={() => router.navigate('/shop')} />
     </ScrollView>
   );
 }

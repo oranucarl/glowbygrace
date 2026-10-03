@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { useRef } from 'react';
 import { Image } from 'expo-image';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { inStock, minPrice, useCatalog } from '../../lib/catalog';
@@ -20,7 +21,13 @@ export default function ProductScreen() {
   const [len, setLen] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
-  const [photo, setPhoto] = useState<'model' | 'sample'>('model');
+  const [photo, setPhoto] = useState(0); // 0 = worn by a model, 1 = hair close-up
+  const gallery = useRef<ScrollView>(null);
+  const showPhoto = (i: number) => {
+    setPhoto(i);
+    gallery.current?.scrollTo({ x: i * width, animated: true });
+  };
+  const onSwipe = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPhoto(Math.round(e.nativeEvent.contentOffset.x / width));
   const [busy, setBusy] = useState(false);
 
   if (!p) {
@@ -69,12 +76,20 @@ export default function ProductScreen() {
     <>
       <Stack.Screen options={{ title: p.name }} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* swipe between the model photo and the hair close-up */}
         <View style={{ width, height: width * 1.15, backgroundColor: C.cream2 }}>
-          <Image source={photo === 'model' ? p.model : p.sample} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+          <ScrollView ref={gallery} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onSwipe} onScrollEndDrag={onSwipe}>
+            {[p.model, p.sample].map((src, i) => (
+              <Image key={i} source={src} style={{ width, height: width * 1.15 }} contentFit="cover" transition={200} />
+            ))}
+          </ScrollView>
+          <View style={s.photoLabel}>
+            <Text style={s.photoLabelText}>{photo === 0 ? 'Worn by a model · swipe for close-up' : 'Hair close-up'}</Text>
+          </View>
           <View style={s.thumbs}>
-            {(['model', 'sample'] as const).map((k) => (
-              <Pressable key={k} onPress={() => setPhoto(k)} style={[s.thumb, photo === k && { borderColor: C.cream }]} accessibilityLabel={k === 'model' ? 'Model photo' : 'Hair close-up'}>
-                <Image source={k === 'model' ? p.model : p.sample} style={{ flex: 1 }} contentFit="cover" />
+            {[p.model, p.sample].map((src, i) => (
+              <Pressable key={i} onPress={() => showPhoto(i)} style={[s.thumb, photo === i && { borderColor: C.cream }]} accessibilityLabel={i === 0 ? 'Model photo' : 'Hair close-up'}>
+                <Image source={src} style={{ flex: 1 }} contentFit="cover" />
               </Pressable>
             ))}
           </View>
@@ -133,6 +148,8 @@ export default function ProductScreen() {
 
 const s = StyleSheet.create({
   thumbs: { position: 'absolute', left: 16, bottom: 16, flexDirection: 'row', gap: 8 },
+  photoLabel: { position: 'absolute', top: 14, alignSelf: 'center', backgroundColor: 'rgba(23,15,11,0.55)', borderRadius: 999, paddingVertical: 5, paddingHorizontal: 12 },
+  photoLabelText: { fontFamily: F.bodyBold, fontSize: 11, color: C.cream },
   thumb: { width: 56, height: 68, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
   h1: { fontFamily: F.display, fontSize: 34, color: C.espresso, marginTop: 6 },
   price: { fontFamily: F.bodyHeavy, fontSize: 20, color: C.espresso, marginTop: 8 },
