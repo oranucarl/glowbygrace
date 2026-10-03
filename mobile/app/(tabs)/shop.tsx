@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { CATEGORIES, useCatalog } from '../../lib/catalog';
+import { CATEGORIES, useCatalog, type Product } from '../../lib/catalog';
+import { bounceX, bounceY, listTuning } from '../../lib/scroll';
 import { C, F } from '../../lib/theme';
 import { Eyebrow } from '../../components/ui';
 import { ProductCard } from '../../components/ProductCard';
@@ -17,10 +18,13 @@ export default function Shop() {
   const cardW = (width - 16 * 2 - 12 * (cols - 1)) / cols;
 
   const cats = useMemo(() => CATEGORIES.filter((c) => c.key === 'all' || products.some((p) => p.category === c.key)), [products]);
+  const renderItem = useCallback(({ item }: { item: Product }) => <ProductCard p={item} width={cardW} />, [cardW]);
   const list = useMemo(() => products.filter((p) => cat === 'all' || p.category === cat), [products, cat]);
 
   return (
     <FlatList
+      {...bounceY}
+      {...listTuning}
       key={cols}
       data={list}
       numColumns={cols}
@@ -36,7 +40,7 @@ export default function Shop() {
               Shop the <Text style={{ fontFamily: F.displayItalic }}>glow</Text>
             </Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <ScrollView horizontal {...bounceX} contentContainerStyle={{ gap: 8 }}>
             {cats.map((c) => (
               <Pressable key={c.key} onPress={() => setCat(c.key)} style={[s.cat, cat === c.key && s.catOn]} accessibilityRole="tab" accessibilityState={{ selected: cat === c.key }}>
                 <Text style={[s.catText, cat === c.key && { color: C.cream }]}>{c.label}</Text>
@@ -47,7 +51,7 @@ export default function Shop() {
           {!loading && !error ? <Text style={s.note}>{list.length} {list.length === 1 ? 'style' : 'styles'} · press and hold a photo to see the hair up close</Text> : null}
         </View>
       }
-      renderItem={({ item }) => <ProductCard p={item} width={cardW} />}
+      renderItem={renderItem}
     />
   );
 }

@@ -3,8 +3,9 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { useCart, type CartLine } from '../../lib/cart';
-import { inStock, useCatalog } from '../../lib/catalog';
+import { inStock, sized, useCatalog } from '../../lib/catalog';
 import { C, F, naira } from '../../lib/theme';
+import { bounceY } from '../../lib/scroll';
 import { Button, Card } from '../../components/ui';
 
 export default function Bag() {
@@ -34,6 +35,7 @@ export default function Bag() {
 
   return (
     <FlatList
+      {...bounceY}
       data={rows}
       keyExtractor={(r) => `${r.l.productId}|${r.l.length}|${r.l.color || ''}`}
       contentContainerStyle={{ padding: 16, gap: 12, flexGrow: 1 }}
@@ -47,7 +49,7 @@ export default function Bag() {
       }
       renderItem={({ item: { l, p, v } }) => (
         <Card style={s.line}>
-          <Image source={p.model} style={s.img} contentFit="cover" />
+          <Image source={sized(p.model, 200)} cachePolicy="memory-disk" style={s.img} contentFit="cover" />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={s.name} numberOfLines={2}>{p.name}</Text>
             <Text style={s.muted}>{[l.length, l.color].filter(Boolean).join(' · ')} · {naira(v.price)}</Text>

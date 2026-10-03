@@ -1,14 +1,14 @@
 // Product card used on Home and Shop. Like the website's hover effect:
 // press and hold the photo (or tap ⇄) to see the hair close-up.
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { minPrice, soldOut, type Product } from '../lib/catalog';
+import { minPrice, sized, soldOut, type Product } from '../lib/catalog';
 import { C, F, naira } from '../lib/theme';
 
-export function ProductCard({ p, width }: { p: Product; width: number }) {
+export const ProductCard = memo(function ProductCard({ p, width }: { p: Product; width: number }) {
   const [holding, setHolding] = useState(false);
   const [pinned, setPinned] = useState(false);
   const closeUp = holding || pinned;
@@ -28,8 +28,8 @@ export function ProductCard({ p, width }: { p: Product; width: number }) {
         style={[s.media, { height: width * 1.3 }]}
       >
         {/* both photos stay loaded so the swap is instant */}
-        <Image source={p.model} style={[StyleSheet.absoluteFill, out && { opacity: 0.6 }]} contentFit="cover" transition={150} />
-        <Image source={p.sample} style={[StyleSheet.absoluteFill, { opacity: closeUp ? 1 : 0 }]} contentFit="cover" transition={150} />
+        <Image source={sized(p.model, 600)} recyclingKey={`${p.id}-m`} cachePolicy="memory-disk" style={[StyleSheet.absoluteFill, out && { opacity: 0.6 }]} contentFit="cover" transition={100} />
+        <Image source={sized(p.sample, 600)} recyclingKey={`${p.id}-s`} cachePolicy="memory-disk" style={[StyleSheet.absoluteFill, { opacity: closeUp ? 1 : 0 }]} contentFit="cover" transition={100} />
         <View style={s.top}>
           {tag ? (
             <View style={s.tag}>
@@ -65,7 +65,7 @@ export function ProductCard({ p, width }: { p: Product; width: number }) {
       </Pressable>
     </View>
   );
-}
+});
 
 const s = StyleSheet.create({
   media: { borderRadius: 20, overflow: 'hidden', backgroundColor: C.cream2 },

@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { SITE_URL, callFunction, supabase } from '../../lib/supabase';
 import { FLOW, STATUS, type Order } from '../../lib/orders';
+import { bounceY } from '../../lib/scroll';
 import { C, F, naira } from '../../lib/theme';
 import { Button, Card, Eyebrow, Notice } from '../../components/ui';
 
@@ -90,7 +91,7 @@ export default function OrderScreen() {
   const at = FLOW.indexOf(order.status);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}>
+    <ScrollView {...bounceY} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}>
       {paid ? (
         <View style={s.hero}>
           <View style={s.check}><Text style={s.checkText}>✓</Text></View>

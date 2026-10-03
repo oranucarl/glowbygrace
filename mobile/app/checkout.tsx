@@ -5,6 +5,7 @@ import { useAuth, displayName } from '../lib/auth';
 import { useCart } from '../lib/cart';
 import { STATES, inStock, useCatalog, zoneFor } from '../lib/catalog';
 import { SITE_URL, callFunction, supabase } from '../lib/supabase';
+import { bounceY } from '../lib/scroll';
 import { C, F, naira } from '../lib/theme';
 import { Button, Card, Field, Notice } from '../components/ui';
 
@@ -78,7 +79,7 @@ export default function Checkout() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+      <ScrollView {...bounceY} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <Card style={{ gap: 10 }}>
           <Text style={s.h3}>Order summary</Text>
           {rows.map((r: any) => (

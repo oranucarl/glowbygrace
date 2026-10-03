@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link, useFocusEffect } from 'expo-router';
 import { authMessage, displayName, useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
+import { bounceY } from '../../lib/scroll';
 import { C, F, naira } from '../../lib/theme';
 import { STATUS, type Order } from '../../lib/orders';
 import { Button, Card, Eyebrow, Field, Notice } from '../../components/ui';
@@ -68,7 +69,7 @@ function SignInForm() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
+      <ScrollView {...bounceY} contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
         <View>
           <Eyebrow>Your account</Eyebrow>
           <Text style={s.h1}>
@@ -146,7 +147,7 @@ function SignedIn() {
   const name = displayName(user);
 
   return (
-    <ScrollView
+    <ScrollView {...bounceY}
       contentContainerStyle={{ padding: 20, gap: 16 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={C.espresso} />}
     >

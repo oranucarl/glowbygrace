@@ -1,5 +1,5 @@
 // Home — the app version of the website's landing page.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,6 +7,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCatalog } from '../../lib/catalog';
+import { bounceX, bounceY } from '../../lib/scroll';
 import { C, F } from '../../lib/theme';
 import { Button, Eyebrow } from '../../components/ui';
 import { ProductCard } from '../../components/ProductCard';
@@ -64,10 +65,18 @@ export default function Home() {
     if (shouldPlay) player.play();
     else player.pause();
   }, [shouldPlay, player]);
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setHeroVisible(e.nativeEvent.contentOffset.y < heroH * 0.8);
+  // only re-render when the hero goes off/on screen — not on every scroll frame
+  const heroVisibleRef = useRef(true);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const v = e.nativeEvent.contentOffset.y < heroH * 0.8;
+    if (v !== heroVisibleRef.current) {
+      heroVisibleRef.current = v;
+      setHeroVisible(v);
+    }
+  };
 
   return (
-    <ScrollView onScroll={onScroll} scrollEventThrottle={64} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refresh(true)} tintColor={C.espresso} />}>
+    <ScrollView {...bounceY} onScroll={onScroll} scrollEventThrottle={100} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refresh(true)} tintColor={C.espresso} />}>
       {/* hero */}
       <View style={{ height: heroH }}>
         <Image source={HERO} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
@@ -83,7 +92,7 @@ export default function Home() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.marquee} contentContainerStyle={{ gap: 22, paddingHorizontal: 16 }}>
+      <ScrollView horizontal {...bounceX} style={s.marquee} contentContainerStyle={{ gap: 22, paddingHorizontal: 16 }}>
         {MARQUEE.map((m) => <Text key={m} style={s.marqueeText}>{m} ✦</Text>)}
       </ScrollView>
 
@@ -91,10 +100,10 @@ export default function Home() {
       <View style={s.section}>
         <Eyebrow>Shop by style</Eyebrow>
         <Text style={s.h2}>Pick your <Text style={{ fontFamily: F.displayItalic }}>era.</Text></Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingLeft: 16, marginTop: 14 }}>
+        <ScrollView horizontal {...bounceX} contentContainerStyle={{ gap: 12, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingLeft: 16, marginTop: 14 }}>
           {STYLES.map((t) => (
             <Pressable key={t.cat} onPress={() => goShop(t.cat)} style={s.tile} accessibilityRole="button" accessibilityLabel={`Shop ${t.label}`}>
-              <Image source={t.img} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              <Image source={t.img} cachePolicy="memory-disk" style={StyleSheet.absoluteFill} contentFit="cover" transition={100} />
               <LinearGradient colors={['transparent', 'rgba(23,15,11,0.7)']} style={StyleSheet.absoluteFill} />
               <Text style={s.tileText}>{t.label} ↗</Text>
             </Pressable>
@@ -138,7 +147,7 @@ export default function Home() {
         <View style={[s.grid, { gap: 8 }]}>
           {LOOKBOOK.map((src) => (
             <Pressable key={src} onPress={() => goShop()} style={{ width: (width - 32 - 8) / 2, height: (width - 40) / 2 * 1.2, borderRadius: 16, overflow: 'hidden' }}>
-              <Image source={src} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              <Image source={src} cachePolicy="memory-disk" style={StyleSheet.absoluteFill} contentFit="cover" transition={100} />
             </Pressable>
           ))}
         </View>

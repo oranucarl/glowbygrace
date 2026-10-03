@@ -6,6 +6,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { inStock, minPrice, useCatalog } from '../../lib/catalog';
 import { useAuth } from '../../lib/auth';
 import { useCart } from '../../lib/cart';
+import { bounceY } from '../../lib/scroll';
 import { C, F, naira } from '../../lib/theme';
 import { Button, Chip, Eyebrow } from '../../components/ui';
 
@@ -75,7 +76,7 @@ export default function ProductScreen() {
   return (
     <>
       <Stack.Screen options={{ title: p.name }} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView {...bounceY} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* swipe between the model photo and the hair close-up */}
         <View style={{ width, height: width * 1.15, backgroundColor: C.cream2 }}>
           <ScrollView ref={gallery} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onSwipe} onScrollEndDrag={onSwipe}>
