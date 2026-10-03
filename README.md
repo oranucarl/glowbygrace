@@ -35,10 +35,23 @@ glowbygrace/
 │       ├── account.js    # Account page
 │       ├── admin.js      # Admin dashboard
 │       └── orders-ui.js  # Shared order display
-└── supabase/
-    ├── migrations/       # Database schema, security rules, starting data
-    └── functions/        # checkout, verify-payment, paystack-webhook (+ _shared)
+├── supabase/
+│   ├── migrations/       # Database schema, security rules, starting data
+│   └── functions/        # checkout, verify-payment, paystack-webhook, welcome-email (+ _shared)
+└── mobile/               # Expo (React Native) app — same Supabase backend, accounts and bag
 ```
+
+## Mobile app
+The `mobile/` folder is an Expo app for iPhone and Android. It signs in with the same accounts as the
+website, and the bag is shared live: add an item on the website and it appears in the app instantly
+(and the other way round), through Supabase Realtime on the `cart_items` table.
+
+```bash
+cd mobile
+npm install
+npx expo start      # scan the QR code with Expo Go (iPhone: Camera app, Android: Expo Go)
+```
+Your phone and computer need to be on the same Wi-Fi (or run `npx expo start --tunnel`).
 
 ## Run locally
 ```bash
