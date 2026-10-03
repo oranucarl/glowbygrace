@@ -1,0 +1,5 @@
+# The mobile app is not part of the website
+mobile/
+# Server code and local notes stay out of the public site too
+supabase/
+SETUP.md
