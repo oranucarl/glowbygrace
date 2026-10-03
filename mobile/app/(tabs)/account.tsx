@@ -74,7 +74,6 @@ function SignInForm() {
           <Text style={s.h1}>
             Welcome <Text style={{ fontFamily: F.displayItalic }}>back</Text>
           </Text>
-          <Text style={s.muted}>Use the same account as the website (Google or email) — your bag and orders are shared.</Text>
         </View>
         <Card style={{ gap: 14 }}>
           {mode !== 'forgot' ? (
