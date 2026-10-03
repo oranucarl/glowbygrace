@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signing you in — Glow by Grace</title>
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#2a1a14">
+  <style>
+    body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px 16px; background: #f7f0e7; color: #2a1a14; font-family: system-ui, -apple-system, sans-serif; text-align: center; }
+    .card { width: min(420px, 100%); background: #fffdfa; border-radius: 24px; padding: 32px 24px; box-shadow: 0 20px 50px -25px rgba(42,26,20,.45); }
+    h1 { font-family: Georgia, serif; font-weight: 400; font-size: 1.9rem; margin: 0 0 10px; }
+    p { color: #8a7366; line-height: 1.6; margin: 0 0 20px; }
+    a.btn { display: inline-block; background: #2a1a14; color: #f7f0e7; text-decoration: none; padding: 15px 26px; border-radius: 999px; font-weight: 800; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Signing you in…</h1>
+    <p data-msg>Taking you back to the Glow by Grace app.</p>
+    <a class="btn" data-back href="#" hidden>Return to the app</a>
+  </main>
+  <script>
+    // Google sign-in for the mobile app lands here (an allowed address) and is handed straight
+    // to the app. Only the app's own links are accepted, so the sign-in can't be sent anywhere else.
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var to = params.get("to") || "";
+      params.delete("to");
+      var ok = /^(exp|exps|glowbygrace):\/\//i.test(to);
+      var msg = document.querySelector("[data-msg]");
+      var back = document.querySelector("[data-back]");
+      if (!ok) { msg.textContent = "Please go back to the Glow by Grace app and try signing in again."; return; }
+      var extra = params.toString(); // e.g. ?code=… if Supabase sends a code instead of tokens
+      var target = to + (extra ? (to.indexOf("?") >= 0 ? "&" : "?") + extra : "") + (location.hash || "");
+      history.replaceState(null, "", location.pathname); // don't leave the sign-in in the address bar
+      back.href = target;
+      back.hidden = false;
+      location.replace(target);
+    })();
+  </script>
+</body>
+</html>

@@ -65,10 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     // Same Google account as the website. Opens Google in an in-app browser, then returns into the app.
     async signInWithGoogle() {
-      const redirectTo = Linking.createURL('auth-callback');
+      const appUrl = Linking.createURL('auth-callback');
+      // Supabase returns to the website's hand-off page (always an allowed address), which passes
+      // the sign-in straight into the app via appUrl.
+      const redirectTo = `${SITE_URL}/app-auth.html?to=${encodeURIComponent(appUrl)}`;
       const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
       if (error) throw error;
-      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      const res = await WebBrowser.openAuthSessionAsync(data.url, appUrl);
       if (res.type !== 'success') return false; // closed by the shopper
       return sessionFromUrl(res.url);
     },
