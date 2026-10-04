@@ -19,7 +19,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.glowbygrace.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,6 +52,9 @@
         "projectId": "c5d28192-a927-464b-9967-855c4d6fa278"
       }
     },
-    "owner": "oranucarl"
+    "owner": "oranucarl",
+    "updates": {
+      "url": "https://u.expo.dev/c5d28192-a927-464b-9967-855c4d6fa278"
+    }
   }
 }
