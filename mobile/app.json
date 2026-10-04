@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.glowbygrace.app"
+      "package": "com.glowbygrace.app",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,8 +31,24 @@
       "expo-web-browser",
       "expo-image",
       "expo-font",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#2a1a14"
+        }
+      ]
     ],
-    "scheme": "glowbygrace"
+    "scheme": "glowbygrace",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c5d28192-a927-464b-9967-855c4d6fa278"
+      }
+    },
+    "owner": "oranucarl"
   }
 }
