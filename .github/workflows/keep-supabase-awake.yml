@@ -1,0 +1,18 @@
+# Supabase's free plan pauses a project after about a week without visits.
+# This loads one product every 3 days so the shop's database stays awake.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: "0 8 */3 * *" # every 3 days at 08:00 UTC (9am Lagos)
+  workflow_dispatch: # run it by hand from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load one product from the shop database
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 20 \
+            "https://kayatzmitpwuhntmukeu.supabase.co/rest/v1/products?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}"
