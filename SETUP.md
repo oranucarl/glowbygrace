@@ -29,6 +29,7 @@ Work through the steps in order. You'll collect these values along the way:
    5. `supabase/migrations/20261002000002_welcome_email.sql` (welcome email for new customers — see the
       Vault secrets it needs at the top of the file)
    6. `supabase/migrations/20261003000000_cart.sql` (account bag shared by the website and mobile app, live via Realtime)
+   7. `supabase/migrations/20261030000000_keep_alive.sql` (heartbeat for the daily keep-awake job on the free plan)
 4. Make the seller an admin (use the Gmail address they'll sign in with):
    ```sql
    insert into public.admins (email) values ('seller@gmail.com');
