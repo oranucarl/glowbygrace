@@ -1,31 +1,59 @@
 # Supabase's free plan pauses a project after about a week without "sufficient activity".
-# A read every few days wasn't enough to stop the warning emails, so this runs daily and
-# does real work: a product read, a database write (keep_alive heartbeat) and a login-service check.
+# Once a day, at a different random time each day, this does real work: a product read,
+# a database write (keep_alive heartbeat) and a login-service check.
+#
+# GitHub only supports fixed schedules, so the job wakes every hour and pings only during
+# that day's chosen hour (picked from the date), after a random 0–40 minute wait.
+# The other wake-ups exit in a couple of seconds without touching the database.
 name: Keep Supabase awake
 
 on:
   schedule:
-    - cron: "17 8 * * *" # daily at 08:17 UTC (9:17am Lagos) — off the busy top of the hour
-  workflow_dispatch: # run it by hand from the Actions tab
+    - cron: "7 * * * *" # every hour at :07 — the job itself decides whether today's ping is due
+  workflow_dispatch: # run by hand from the Actions tab: always pings straight away
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     env:
       URL: https://kayatzmitpwuhntmukeu.supabase.co
       KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
+      - name: Is today's ping due this hour?
+        id: due
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual run — pinging now."
+            echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          today=$(date -u +%Y-%m-%d)
+          pick=$(( $(printf '%s' "glowbygrace-$today" | cksum | cut -d' ' -f1) % 24 ))
+          now=$(date -u +%-H)
+          echo "Today ($today) the ping runs during hour $pick UTC; it is now hour $now UTC."
+          if [ "$now" -eq "$pick" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Random wait (0–40 minutes) so the minute changes too
+        if: steps.due.outputs.go == 'true' && github.event_name != 'workflow_dispatch'
+        run: |
+          wait=$(( RANDOM % 2401 ))
+          echo "Waiting $((wait / 60))m $((wait % 60))s"
+          sleep "$wait"
+
       - name: Read products (same as the shop page)
+        if: steps.due.outputs.go == 'true'
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 20 \
             "$URL/rest/v1/products?select=id,name&limit=5" -H "apikey: $KEY"
 
       - name: Write the heartbeat (database write)
+        if: steps.due.outputs.go == 'true'
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 20 -X POST \
             "$URL/rest/v1/rpc/keep_alive" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}'
 
       - name: Check the login service
+        if: steps.due.outputs.go == 'true'
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 20 \
             "$URL/auth/v1/health" -H "apikey: $KEY"
