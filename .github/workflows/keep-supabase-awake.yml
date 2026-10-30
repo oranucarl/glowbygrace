@@ -1,18 +1,31 @@
-# Supabase's free plan pauses a project after about a week without visits.
-# This loads one product every 3 days so the shop's database stays awake.
+# Supabase's free plan pauses a project after about a week without "sufficient activity".
+# A read every few days wasn't enough to stop the warning emails, so this runs daily and
+# does real work: a product read, a database write (keep_alive heartbeat) and a login-service check.
 name: Keep Supabase awake
 
 on:
   schedule:
-    - cron: "0 8 */3 * *" # every 3 days at 08:00 UTC (9am Lagos)
+    - cron: "17 8 * * *" # daily at 08:17 UTC (9:17am Lagos) — off the busy top of the hour
   workflow_dispatch: # run it by hand from the Actions tab
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    env:
+      URL: https://kayatzmitpwuhntmukeu.supabase.co
+      KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - name: Load one product from the shop database
+      - name: Read products (same as the shop page)
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 20 \
-            "https://kayatzmitpwuhntmukeu.supabase.co/rest/v1/products?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}"
+            "$URL/rest/v1/products?select=id,name&limit=5" -H "apikey: $KEY"
+
+      - name: Write the heartbeat (database write)
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 20 -X POST \
+            "$URL/rest/v1/rpc/keep_alive" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}'
+
+      - name: Check the login service
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 20 \
+            "$URL/auth/v1/health" -H "apikey: $KEY"
